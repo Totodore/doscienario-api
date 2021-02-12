@@ -31,7 +31,7 @@ FROM node:14.15-alpine
 
 WORKDIR /app
 
-COPY --from=build /build /app
+COPY --from=build /dist /app
 
 #Installing webp
 RUN apk update && \
