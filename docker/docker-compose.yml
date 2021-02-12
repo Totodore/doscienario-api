@@ -1,0 +1,38 @@
+version: "3"
+services:
+  back:
+    image: ghcr.io/totodore/doscenario-api:latest
+    container_name: doscenario-api
+    tty: true
+    restart: always
+    volumes:
+      - api-data:/data
+    expose:
+      - 3000
+    env_file:
+      - back.env
+    networks:
+      - "web"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.doscenario-api-secure.rule=Host(`doscenario-api.scriptis.fr`)"
+      - "traefik.http.routers.doscenario-api-secure.entrypoints=websecure"
+      - "traefik.http.routers.doscenario-api-secure.tls.certresolver=myhttpchallenge"
+      # https redirection
+      - "traefik.http.middlewares.redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.doscenario-api.rule=Host(`doscenario-api.scriptis.fr`)"
+      - "traefik.http.routers.doscenario-api.entrypoints=web"
+      - "traefik.http.routers.doscenario-api.middlewares=redirect"
+      #Docker-CI
+      - "docker-ci.enable=true"
+      - "docker-ci.username=Totodore"
+      - "docker-ci.password=dc40612a01f34ea5a2c073e2203edfd2b65003a0"
+      - "docker-ci.auth-server=https://ghcr.io"
+      - "docker-ci.repo-url=ghcr.io/totodore/doscenario-api:latest"
+
+volumes:
+  api-data:
+
+networks:
+  web:
+    external: true
