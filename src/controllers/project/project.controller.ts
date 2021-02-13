@@ -3,7 +3,7 @@ import { GetUser, GetUserId } from 'src/decorators/user.decorator';
 import { UserGuard } from 'src/guards/user.guard';
 import { Project } from 'src/models/project.entity';
 import { User } from 'src/models/user.entity';
-import { AppLogger } from 'src/utils/app-logger.service';
+import { AppLogger } from 'src/utils/app-logger.util';
 import { ProjectAddDto } from './project-add.dto';
 import { ProjectUserDto } from './project-user.dto';
 

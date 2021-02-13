@@ -2,7 +2,7 @@ import { BadRequestException, Body, Controller, ForbiddenException, Get, Patch, 
 import { GetUser } from 'src/decorators/user.decorator';
 import { UserGuard } from 'src/guards/user.guard';
 import { User } from 'src/models/user.entity';
-import { AppLogger } from 'src/utils/app-logger.service';
+import { AppLogger } from 'src/utils/app-logger.util';
 import { JwtService } from 'src/services/jwt.service';
 import { UserAuthDto } from './user-auth.dto';
 import { UserNameDto } from './user-name.dto';

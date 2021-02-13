@@ -13,7 +13,7 @@ export class WsUserGuard implements CanActivate {
     const auth = ws.handshake.headers.authorization;
     if (!this._jwt.verify(auth))
       return false;
-    ws.handshake.headers.user = this._jwt.getUserId(auth);
+    ws.handshake.headers.user = this._jwt.getUserId(auth).toString();
     return true;
   }
 }

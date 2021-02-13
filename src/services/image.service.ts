@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { AppLogger } from "../utils/app-logger.service";
+import { AppLogger } from "../utils/app-logger.util";
 
 import * as fs from "fs-extra";
 import * as path from "path";
