@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 
 import { Blueprint } from './models/blueprint.entity';
 import { Document } from './models/document.entity';
@@ -16,7 +14,7 @@ import { Tag } from './models/tag.entity';
 import { User } from './models/user.entity';
 import { UserController } from './controllers/user/user.controller';
 import { JwtService } from './services/jwt.service';
-import { AppLogger } from './utils/app-logger.service';
+import { AppLogger } from './utils/app-logger.util';
 import { ImageService } from './services/image.service';
 import { FileService } from './services/file.service';
 import { ResController } from './controllers/res/res.controller';
@@ -50,7 +48,7 @@ import { ProjectController } from './controllers/project/project.controller';
       logging: false
     }),
   ],
-  controllers: [AppController, UserController, ResController, ProjectController],
-  providers: [AppService, JwtService, FileService, ImageService, DashboardGateway],
+  controllers: [UserController, ResController, ProjectController],
+  providers: [JwtService, FileService, ImageService, DashboardGateway],
 })
 export class AppModule {}
