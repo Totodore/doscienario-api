@@ -7,6 +7,12 @@ export abstract class AppEntity extends BaseEntity {
   }
 
   public static async exists<T extends AppEntity>(options: FindOneOptions<T>): Promise<boolean> {
-    return (await this.findOne<T>(options)) !== null;
+    return (await this.findOne<T>(options)) != null;
   }
-} 
+
+  public exclude(exclude: (keyof this)[]): this {
+    for (const key of exclude)
+      delete this[key];
+    return this;
+  }
+}
