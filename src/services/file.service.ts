@@ -1,7 +1,8 @@
 import { Injectable, LoggerService, OnModuleInit } from '@nestjs/common';
+
 import path from 'path';
 import * as fs from "fs-extra";
-
+import FileType from "file-type";
 @Injectable()
 export class FileService implements OnModuleInit {
 
@@ -19,10 +20,11 @@ export class FileService implements OnModuleInit {
     return fs.readFileSync(path.join(this._baseRoute, filePath));
   }
 
-  public writeFile(file: Buffer, filePath: string) {
+  public async writeFile(file: Buffer, filePath: string): Promise<string> {
     filePath = path.join(this._baseRoute, filePath);
     fs.ensureDirSync(filePath);
     fs.writeFileSync(filePath, file);
+    return (await FileType.fromBuffer(file)).mime;
   }
 
   public removeFile(filePath: string) {

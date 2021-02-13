@@ -1,4 +1,4 @@
-import { BaseEntity, Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, RelationId } from "typeorm";
 import { AppEntity } from "./app.entity";
 import { Project } from "./project.entity";
 import { Tag } from "./tag.entity";
@@ -9,6 +9,9 @@ export class File extends AppEntity {
 
   @PrimaryGeneratedColumn()
   id: number;
+
+  @RelationId((file: File) => file.project)
+  projectId: number;
 
   @ManyToOne(() => Project)
   @JoinColumn()
@@ -29,6 +32,9 @@ export class File extends AppEntity {
 
   @Column()
   size: number;
+
+  @RelationId((file: File) => file.tags)
+  tagIds: number[];
 
   @ManyToMany(() => Tag)
   @JoinColumn()

@@ -1,4 +1,4 @@
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, RelationId } from "typeorm";
 import { Project } from "./project.entity";
 import { User } from "./user.entity";
 import { Document } from "./document.entity";
@@ -19,11 +19,14 @@ export class Image extends AppEntity {
   @Column()
   width: number;
 
-  @Column()
+  @Column("timestamp", { default: () => "CURRENT_TIMESTAMP" })
   uploadedDate: Date;
 
   @Column("int", { nullable: true })
   documentPos: number;
+
+  @RelationId((image: Image) => image.document)
+  documentId: number;
 
   @ManyToOne(() => Document, { nullable: true })
   @JoinColumn()

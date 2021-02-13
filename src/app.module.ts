@@ -19,6 +19,7 @@ import { JwtService } from './services/jwt.service';
 import { LoggerService } from './services/app-logger.service';
 import { ImageService } from './services/image.service';
 import { FileService } from './services/file.service';
+import { ResController } from './controllers/res/res.controller';
 
 @Module({
   imports: [
@@ -45,7 +46,7 @@ import { FileService } from './services/file.service';
       synchronize: true,
     }),
   ],
-  controllers: [AppController, UserController],
+  controllers: [AppController, UserController, ResController],
   providers: [AppService, JwtService, LoggerService, ImageService, FileService],
 })
 export class AppModule {}
