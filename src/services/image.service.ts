@@ -13,7 +13,7 @@ export class ImageService implements OnModuleInit {
   constructor(private readonly _logger: AppLogger) { }
 
   async onModuleInit() {
-    this._baseRoute = path.resolve("./images");
+    this._baseRoute = path.resolve("./data/images");
     await fs.ensureDir(this._baseRoute);
 		this._logger.log("Base Image Route", this._baseRoute);
   }
