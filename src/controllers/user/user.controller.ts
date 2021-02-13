@@ -45,8 +45,7 @@ export class UserController {
       throw new ForbiddenException();
 
     user.password = this._jwt.encodePassword(body.new_password);
-    await user.save();
-    return user.exclude(["password"]);
+    return await user.save();
   }
 
   @Patch("/name")

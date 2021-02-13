@@ -1,4 +1,4 @@
-import { BaseEntity, Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "./user.entity";
 import { Document } from "./document.entity";
 import { Blueprint } from "./blueprint.entity";
@@ -18,8 +18,8 @@ export class Project extends AppEntity {
   @Column('timestamp', { default: () => "CURRENT_TIMESTAMP" })
   createdDate: Date;
 
-  @ManyToMany(() => User)
-  @JoinColumn()
+  @ManyToMany(() => User, user => user.projects, { cascade: ["insert", "recover", "update"] })
+  @JoinTable()
   users: User[];
 
   @ManyToOne(() => User)

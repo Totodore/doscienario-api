@@ -21,6 +21,7 @@ import { ImageService } from './services/image.service';
 import { FileService } from './services/file.service';
 import { ResController } from './controllers/res/res.controller';
 import { DashboardGateway } from './sockets/dashboard.gateway';
+import { ProjectController } from './controllers/project/project.controller';
 
 @Module({
   imports: [
@@ -49,7 +50,7 @@ import { DashboardGateway } from './sockets/dashboard.gateway';
       logging: false
     }),
   ],
-  controllers: [AppController, UserController, ResController],
+  controllers: [AppController, UserController, ResController, ProjectController],
   providers: [AppService, JwtService, FileService, ImageService, DashboardGateway],
 })
 export class AppModule {}

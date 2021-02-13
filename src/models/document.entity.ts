@@ -4,6 +4,7 @@ import { User } from "./user.entity";
 import { Image } from "./image.entity";
 import { Tag } from "./tag.entity";
 import { AppEntity } from "./app.entity";
+import { Exclude } from "class-transformer";
 
 export enum DocumentTypes {
   HISTORY = "HISTORY",
@@ -18,7 +19,7 @@ export class Document extends AppEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column("text")
+  @Column("text", { select: false })
   content: string;
 
   @Column("datetime")
