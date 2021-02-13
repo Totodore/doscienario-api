@@ -1,8 +1,9 @@
 import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { AppEntity } from "./app.entity";
 import { Node } from "./node.entity";
 
 @Entity()
-export class Relationship extends BaseEntity {
+export class Relationship extends AppEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

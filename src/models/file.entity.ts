@@ -1,10 +1,26 @@
 import { BaseEntity, Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { ElementEntity } from "./element.entity";
+import { AppEntity } from "./app.entity";
+import { Project } from "./project.entity";
 import { Tag } from "./tag.entity";
 import { User } from "./user.entity";
 
 @Entity()
-export class File extends ElementEntity {
+export class File extends AppEntity {
+
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @ManyToOne(() => Project)
+  @JoinColumn()
+  project: Project;
+
+  @ManyToOne(() => User)
+  @JoinColumn()
+  createdBy: User;
+
+  @Column("timestamp", { default: () => "CURRENT_TIMESTAMP"})
+  createdDate: Date;
+
   @Column()
   mime: string;
 

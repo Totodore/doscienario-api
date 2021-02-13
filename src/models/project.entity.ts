@@ -3,9 +3,11 @@ import { User } from "./user.entity";
 import { Document } from "./document.entity";
 import { Blueprint } from "./blueprint.entity";
 import { Tag } from "./tag.entity";
+import { AppEntity } from "./app.entity";
+import { File } from "./file.entity";
 
 @Entity()
-export class Project extends BaseEntity {
+export class Project extends AppEntity {
 
   @PrimaryGeneratedColumn()
   id: number;
@@ -13,7 +15,7 @@ export class Project extends BaseEntity {
   @Column()
   name: string;
 
-  @Column('datetime')
+  @Column('timestamp', { default: () => "CURRENT_TIMESTAMP" })
   createdDate: Date;
 
   @ManyToMany(() => User)
@@ -28,11 +30,15 @@ export class Project extends BaseEntity {
   @JoinColumn()
   documents: Document[];
 
-  @OneToOne(() => Blueprint, blueprint => blueprint.project)
+  @OneToMany(() => Blueprint, blueprint => blueprint.project)
   @JoinColumn()
   blueprints: Blueprint[];
 
   @OneToMany(() => Tag, tag => tag.project)
   @JoinColumn()
   tags: Tag[];
+
+  @OneToMany(() => File, file => file.project)
+  @JoinColumn()
+  files: File[];
 }

@@ -15,6 +15,8 @@ import { Sheet } from './models/sheet.entity';
 import { Tag } from './models/tag.entity';
 import { User } from './models/user.entity';
 import { UserController } from './controllers/user/user.controller';
+import { JwtService } from './services/jwt.service';
+import { AppLoggerService } from './services/app-logger.service';
 
 @Module({
   imports: [
@@ -42,6 +44,6 @@ import { UserController } from './controllers/user/user.controller';
     }),
   ],
   controllers: [AppController, UserController],
-  providers: [AppService],
+  providers: [AppService, JwtService, AppLoggerService],
 })
 export class AppModule {}
