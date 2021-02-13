@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { LoggerService } from "./app-logger.service";
+import { AppLogger } from "../utils/app-logger.service";
 
 import * as fs from "fs-extra";
 import * as path from "path";
@@ -10,7 +10,7 @@ export class ImageService implements OnModuleInit {
 
   private _baseRoute: string;
 
-  constructor(private readonly _logger: LoggerService) { }
+  constructor(private readonly _logger: AppLogger) { }
 
   async onModuleInit() {
     this._baseRoute = path.resolve("./images");

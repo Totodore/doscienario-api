@@ -1,7 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Module } from '@nestjs/common';
 
-@Injectable()
-export class LoggerService extends Logger {
+@Module({
+  providers: [AppLogger],
+  exports: [AppLogger],
+})
+export class AppLogger extends Logger {
 
   log(...message: any[]) {
     super.log(message.join(" "), "AppLogger");

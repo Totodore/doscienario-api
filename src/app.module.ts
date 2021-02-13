@@ -16,13 +16,14 @@ import { Tag } from './models/tag.entity';
 import { User } from './models/user.entity';
 import { UserController } from './controllers/user/user.controller';
 import { JwtService } from './services/jwt.service';
-import { LoggerService } from './services/app-logger.service';
+import { AppLogger } from './utils/app-logger.service';
 import { ImageService } from './services/image.service';
 import { FileService } from './services/file.service';
 import { ResController } from './controllers/res/res.controller';
 
 @Module({
   imports: [
+    AppLogger,
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'mysql',
@@ -47,6 +48,6 @@ import { ResController } from './controllers/res/res.controller';
     }),
   ],
   controllers: [AppController, UserController, ResController],
-  providers: [AppService, JwtService, LoggerService, ImageService, FileService],
+  providers: [AppService, JwtService, FileService, ImageService],
 })
 export class AppModule {}

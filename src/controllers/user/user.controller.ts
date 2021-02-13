@@ -2,7 +2,7 @@ import { Body, Controller, ForbiddenException, Get, Patch, Post, UseGuards } fro
 import { GetUser } from 'src/decorators/user.decorator';
 import { UserGuard } from 'src/guards/user.guard';
 import { User } from 'src/models/user.entity';
-import { LoggerService } from 'src/services/app-logger.service';
+import { AppLogger } from 'src/utils/app-logger.service';
 import { JwtService } from 'src/services/jwt.service';
 import { UserAuthDto } from './user-auth.dto';
 import { UserNameDto } from './user-name.dto';
@@ -14,7 +14,7 @@ export class UserController {
 
   constructor(
     private readonly _jwt: JwtService,
-    private readonly _logger: LoggerService
+    private readonly _logger: AppLogger
   ) {}
 
   @Post("/auth")

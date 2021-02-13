@@ -1,14 +1,15 @@
-import { Injectable, LoggerService, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 
 import path from 'path';
 import * as fs from "fs-extra";
 import FileType from "file-type";
+import { AppLogger } from 'src/utils/app-logger.service';
 @Injectable()
 export class FileService implements OnModuleInit {
 
   private _baseRoute: string;
 
-  constructor(private readonly _logger: LoggerService) { }
+  constructor(private readonly _logger: AppLogger) { }
 
   async onModuleInit() {
     this._baseRoute = path.resolve("./files");
