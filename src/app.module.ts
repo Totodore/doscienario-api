@@ -20,6 +20,7 @@ import { AppLogger } from './utils/app-logger.service';
 import { ImageService } from './services/image.service';
 import { FileService } from './services/file.service';
 import { ResController } from './controllers/res/res.controller';
+import { DashboardGateway } from './sockets/dashboard.gateway';
 
 @Module({
   imports: [
@@ -45,9 +46,10 @@ import { ResController } from './controllers/res/res.controller';
         Tag,
       ],
       synchronize: true,
+      logging: false
     }),
   ],
   controllers: [AppController, UserController, ResController],
-  providers: [AppService, JwtService, FileService, ImageService],
+  providers: [AppService, JwtService, FileService, ImageService, DashboardGateway],
 })
 export class AppModule {}
