@@ -14,6 +14,12 @@ export class Image extends AppEntity {
   size: number;
 
   @Column()
+  height: number;
+
+  @Column()
+  width: number;
+
+  @Column()
   uploadedDate: Date;
 
   @Column("int", { nullable: true })

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
-export class AppLoggerService extends Logger {
+export class LoggerService extends Logger {
 
   log(...message: any[]) {
     super.log(message.join(" "), "AppLogger");

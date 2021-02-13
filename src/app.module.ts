@@ -16,7 +16,9 @@ import { Tag } from './models/tag.entity';
 import { User } from './models/user.entity';
 import { UserController } from './controllers/user/user.controller';
 import { JwtService } from './services/jwt.service';
-import { AppLoggerService } from './services/app-logger.service';
+import { LoggerService } from './services/app-logger.service';
+import { ImageService } from './services/image.service';
+import { FileService } from './services/file.service';
 
 @Module({
   imports: [
@@ -44,6 +46,6 @@ import { AppLoggerService } from './services/app-logger.service';
     }),
   ],
   controllers: [AppController, UserController],
-  providers: [AppService, JwtService, AppLoggerService],
+  providers: [AppService, JwtService, LoggerService, ImageService, FileService],
 })
 export class AppModule {}
