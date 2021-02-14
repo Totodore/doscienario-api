@@ -10,7 +10,7 @@ import { removeRoom } from 'src/utils/socket.util';
 import { Flags } from './flags.enum';
 import { AddTagDocumentReq, AddTagDocumentRes, CloseDocumentRes, CursorDocumentReq, CursorDocumentRes, OpenDocumentRes, RemoveTagDocumentReq, WriteDocumentReq, WriteDocumentRes } from './models/document.model';
 import { CreateFileReq, RenameFileReq } from './models/file.model';
-import { ColorTagReq, RenameTagReq } from './models/tag.model';
+import { ColorTagReq, RenameTagReq, TagAddFile, TagRemoveFile } from './models/tag.model';
 
 @WebSocketGateway({ namespace: "/dash", path: "/dash" })
 @UseGuards(WsUserGuard)
@@ -185,8 +185,27 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage(Flags.RENAME_FILE)
   async renameFile(client: Socket, body: RenameFileReq) {
+    const data = this.getData(client);
     await File.update(body.id, { path: body.path });
-    client.emit(Flags.RENAME_FILE, body);
+    this.server.of(data.project.toString()).emit(Flags.RENAME_FILE, body);
+  }
+
+  @SubscribeMessage(Flags.TAG_ADD_FILE)
+  async addTagFile(client: Socket, body: TagAddFile) {
+    const data = this.getData(client);
+    const file = await File.findOne(body.fileId);
+    file.tags.push(new Tag(body.tagId));
+    file.save();
+    this.server.of(data.project.toString()).emit(Flags.TAG_ADD_FILE, body);
+  }
+
+  @SubscribeMessage(Flags.TAG_REMOVE_FILE)
+  async removeTagFile(client: Socket, body: TagRemoveFile) {
+    const data = this.getData(client);
+    const file = await File.findOne(body.fileId);
+    file.tags = file.tags.filter(tag => tag.id != body.tagId);
+    await file.save();
+    this.server.of(data.project.toString()).emit(Flags.TAG_REMOVE_FILE, body);
   }
 
 
