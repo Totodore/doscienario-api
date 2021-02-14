@@ -16,7 +16,7 @@ export class ProjectController {
   @Get("/:id")
   async getProject(@Param("id") id: number, @GetUser({ joinProjects: true }) user: User): Promise<Project> {
     this._logger.log(JSON.stringify(user.projects));
-    return await Project.findOne(id, { relations: ["users", "createdBy", "tags", "documents.images", "blueprints"] });
+    return await Project.findOne(id, { relations: ["users", "createdBy", "tags", "documents", "documents.images", "blueprints"] });
   }
 
   @Post()

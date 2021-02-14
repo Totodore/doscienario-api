@@ -12,6 +12,9 @@ export class Tag extends AppEntity {
   @Column()
   name: string;
 
+  @Column()
+  primary: boolean;
+
   @RelationId((tag: Tag) => tag.project)
   projectId: number;
 

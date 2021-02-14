@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, ForbiddenException, Get, Patch, Post, UseGuards } from '@nestjs/common';
-import { GetUser } from 'src/decorators/user.decorator';
+import { GetUser, GetUserId } from 'src/decorators/user.decorator';
 import { UserGuard } from 'src/guards/user.guard';
 import { User } from 'src/models/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';
@@ -7,6 +7,7 @@ import { JwtService } from 'src/services/jwt.service';
 import { UserAuthDto } from './user-auth.dto';
 import { UserNameDto } from './user-name.dto';
 import { UserPassDto } from './user-pass.dto';
+import { Not } from 'typeorm';
 
 @Controller('user')
 export class UserController {
@@ -61,5 +62,11 @@ export class UserController {
   @UseGuards(UserGuard)
   async getInfo(@GetUser({ joinProjects: true }) user: User): Promise<User> {
     return user;
+  }
+
+  @Get("/all")
+  @UseGuards(UserGuard)
+  async getAll(@GetUserId() id: string): Promise<User[]> {
+    return User.find({ where: { id: Not(id) } });
   }
 }

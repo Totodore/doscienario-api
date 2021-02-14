@@ -7,6 +7,9 @@ import { Tag } from "./tag.entity";
 @Entity()
 export class Node extends ElementEntity {
 
+  @PrimaryGeneratedColumn()
+  id: number;
+  
   @Column({ default: false })
   isRoot: boolean;
 
