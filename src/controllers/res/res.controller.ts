@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Get, Header, Param, Post, Query, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { GetUser } from 'src/decorators/user.decorator';
+import { GetUser, GetUserId } from 'src/decorators/user.decorator';
 import { UserGuard } from 'src/guards/user.guard';
 import { File } from 'src/models/file.entity';
 import { User } from 'src/models/user.entity';
@@ -24,16 +24,17 @@ export class ResController {
   @Post("/file")
   @UseGuards(UserGuard)
   @UseInterceptors(FileInterceptor("file"))
-  async addFile(@UploadedFile() file: Express.Multer.File, @Body() body: ResAddDto, @GetUser() user: User): Promise<File> {
-    const mime = await this._files.writeFile(file.buffer, body.path);
-    return await File.create({
+  async addFile(@UploadedFile() file: Express.Multer.File, @Body() body: ResAddDto, @GetUserId() user: string): Promise<File> {
+    const id = uuid.v4();
+    const mime = await this._files.writeFile(file.buffer, id);
+    return File.create({
+      id,
       mime,
       path: body.path,
-      tagIds: body.tags,
-      createdBy: user,
+      createdById: user,
       size: file.buffer.length,
       projectId: body.projectId,
-    }).save();
+    });
   }
 
   @Post("/image")
@@ -43,6 +44,7 @@ export class ResController {
     const id = uuid.v4();
     const data = await this._images.writeImage(file.buffer, id);
     await Image.create({
+      id,
       addedBy: user,
       documentId: body.documentId,
       documentPos: body.documentPos,

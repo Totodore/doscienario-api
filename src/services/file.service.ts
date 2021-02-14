@@ -21,35 +21,14 @@ export class FileService implements OnModuleInit {
     return fs.readFileSync(path.join(this._baseRoute, filePath));
   }
 
-  public async writeFile(file: Buffer, filePath: string): Promise<string> {
-    filePath = path.join(this._baseRoute, filePath);
-    fs.ensureDirSync(filePath);
+  public async writeFile(file: Buffer, id: string): Promise<string> {
+    const filePath = path.join(this._baseRoute, id);
     fs.writeFileSync(filePath, file);
     return (await FileType.fromBuffer(file)).mime;
   }
 
-  public removeFile(filePath: string) {
-    filePath = path.join(this._baseRoute, filePath);
+  public removeFile(id: string) {
+    const filePath = path.join(this._baseRoute, id);
     fs.removeSync(filePath);
   }
-
-  public moveFile(from: string, to: string) {
-    from = path.join(this._baseRoute, from);
-    to = path.join(this._baseRoute, to);
-    fs.ensureDirSync(to);
-    fs.moveSync(from, to);
-  }
-
-  public copyFile(from: string, to: string) {
-    from = path.join(this._baseRoute, from);
-    to = path.join(this._baseRoute, to);
-    fs.ensureDirSync(to);
-    fs.copyFileSync(from, to);
-  }
-
-  public createDir(directory: string) {
-    directory = path.join(this._baseRoute, directory);
-    fs.ensureDirSync(path.join(this._baseRoute, directory));
-  }
-
 }

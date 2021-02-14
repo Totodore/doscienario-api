@@ -7,11 +7,14 @@ import { User } from "./user.entity";
 @Entity()
 export class File extends AppEntity {
 
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
 
   @RelationId((file: File) => file.project)
   projectId: number;
+
+  @RelationId((file: File) => file.createdBy)
+  createdById: string;
 
   @ManyToOne(() => Project)
   @JoinColumn()

@@ -7,10 +7,6 @@ export class ResAddDto {
   @ApiProperty()
   path: string;
 
-  @IsArray()
-  @ApiProperty()
-  tags: number[];
-
   @IsNumber()
   @ApiProperty()
   projectId: number;
