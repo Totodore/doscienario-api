@@ -29,7 +29,6 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   handleConnection(client: Socket) {
-    this._logger.log("New client connected");
     const data = this.getData(client);
     this._logger.log("New client connected ", data.user, data.project);
     client.join(data.project.toString());
