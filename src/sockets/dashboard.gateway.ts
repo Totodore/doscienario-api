@@ -1,6 +1,7 @@
 import { UseGuards } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { UserRes } from 'src/controllers/user/user.res';
 import { Document } from 'src/models/document.entity';
 import { File } from 'src/models/file.entity';
 import { Project } from 'src/models/project.entity';
@@ -100,7 +101,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     this._logger.log("Client remove doc", docId);
 
     await Document.delete(docId);
-    this.server.of(docId).emit(Flags.REMOVE_DOC, docId);
+    this.server.to(docId).emit(Flags.REMOVE_DOC, docId);
     removeRoom(this.server, docId);
   }
 
@@ -111,7 +112,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const doc = await Document.findOne(body.docId);
     doc.tags.push(new Tag(body.tagId));
     await doc.save();
-    this.server.of(body.docId.toString()).emit(Flags.TAG_ADD_DOC, body);
+    this.server.to(body.docId.toString()).emit(Flags.TAG_ADD_DOC, body);
   }
 
   @SubscribeMessage(Flags.TAG_REMOVE_DOC)
@@ -121,7 +122,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const doc = await Document.findOne(body.docId);
     doc.tags = doc.tags.filter(el => el.id != body.tagId);
     await doc.save();
-    this.server.of(body.docId.toString()).emit(Flags.TAG_REMOVE_DOC, body);
+    this.server.to(body.docId.toString()).emit(Flags.TAG_REMOVE_DOC, body);
   }
 
   @SubscribeMessage(Flags.CREATE_TAG)
@@ -133,7 +134,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
       throw new WsException("Tag already exist");
 
     await Tag.create({ createdById: data.user, projectId: data.project, name: name.toLowerCase() }).save();
-    this.server.of(data.project.toString()).emit(Flags.CREATE_TAG, name);
+    this.server.to(data.project.toString()).emit(Flags.CREATE_TAG, name);
   }
 
   @SubscribeMessage(Flags.REMOVE_TAG)
@@ -142,7 +143,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     this._logger.log("Client remove tag");
 
     await Tag.delete(tagId);
-    this.server.of(data.project.toString()).emit(Flags.REMOVE_TAG, tagId);
+    this.server.to(data.project.toString()).emit(Flags.REMOVE_TAG, tagId);
   }
 
   @SubscribeMessage(Flags.RENAME_TAG)
@@ -151,7 +152,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     this._logger.log("Client rename tag");
 
     await Tag.update(body.id, { name: body.name });
-    this.server.of(data.project.toString()).emit(Flags.RENAME_TAG, body);
+    this.server.to(data.project.toString()).emit(Flags.RENAME_TAG, body);
   }
 
   @SubscribeMessage(Flags.COLOR_TAG)
@@ -160,7 +161,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     this._logger.log("Client update color tag");
 
     await Tag.update(body.id, { color: body.color.toString(16) });
-    this.server.of(data.project.toString()).emit(Flags.COLOR_TAG, body);
+    this.server.to(data.project.toString()).emit(Flags.COLOR_TAG, body);
   }
 
   @SubscribeMessage(Flags.CREATE_FILE)
@@ -175,7 +176,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
       size: body.size,
       projectId: data.project,
     }).save();
-    this.server.of(data.project.toString()).emit(Flags.CREATE_FILE, file);
+    this.server.to(data.project.toString()).emit(Flags.CREATE_FILE, file);
   }
 
   @SubscribeMessage(Flags.GET_FILE)
@@ -188,7 +189,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   async renameFile(client: Socket, body: RenameFileReq) {
     const data = this.getData(client);
     await File.update(body.id, { path: body.path });
-    this.server.of(data.project.toString()).emit(Flags.RENAME_FILE, body);
+    this.server.to(data.project.toString()).emit(Flags.RENAME_FILE, body);
   }
 
   @SubscribeMessage(Flags.TAG_ADD_FILE)
@@ -197,7 +198,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const file = await File.findOne(body.fileId);
     file.tags.push(new Tag(body.tagId));
     file.save();
-    this.server.of(data.project.toString()).emit(Flags.TAG_ADD_FILE, body);
+    this.server.to(data.project.toString()).emit(Flags.TAG_ADD_FILE, body);
   }
 
   @SubscribeMessage(Flags.TAG_REMOVE_FILE)
@@ -206,32 +207,33 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const file = await File.findOne(body.fileId);
     file.tags = file.tags.filter(tag => tag.id != body.tagId);
     await file.save();
-    this.server.of(data.project.toString()).emit(Flags.TAG_REMOVE_FILE, body);
+    this.server.to(data.project.toString()).emit(Flags.TAG_REMOVE_FILE, body);
   }
 
   @SubscribeMessage(Flags.RENAME_PROJECT)
   async renameProject(client: Socket, name: string) {
     const data = this.getData(client);
     await Project.update(data.project, { name });
-    this.server.of(data.project.toString()).emit(Flags.RENAME_PROJECT, name);
+    console.log(this.server.to(data.project.toString()));
+    this.server.to(data.project.toString()).emit(Flags.RENAME_PROJECT, name);
   }
 
   @SubscribeMessage(Flags.ADD_USER_PROJECT)
-  async addUserProject(client: Socket, userId: string) {
+  async addUserProject(client: Socket, user: UserRes) {
     const data = this.getData(client);
     const project = await Project.findOne(data.project, { relations: ["users"] });
-    project.users.push(await User.findOne(userId));
+    project.users.push(await User.findOne(user.id));
     await project.save();
-    this.server.of(data.project.toString()).emit(Flags.ADD_USER_PROJECT, userId);
+    this.server.to(data.project.toString()).emit(Flags.ADD_USER_PROJECT, user);
   }
 
   @SubscribeMessage(Flags.REMOVE_USER_PROJECT)
-  async removeUserProject(client: Socket, userId: string) {
+  async removeUserProject(client: Socket, user: UserRes) {
     const data = this.getData(client);
     const project = await Project.findOne(data.project, { relations: ["users"] });
-    project.users.slice(project.users.indexOf(await User.findOne(userId)), 1);
+    project.users.slice(project.users.indexOf(await User.findOne(user.id)), 1);
     await project.save();
-    this.server.of(data.project.toString()).emit(Flags.REMOVE_USER_PROJECT, userId);
+    this.server.to(data.project.toString()).emit(Flags.REMOVE_USER_PROJECT, user);
   }
 
 
