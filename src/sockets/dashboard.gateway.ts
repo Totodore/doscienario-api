@@ -1,10 +1,12 @@
 import { UseGuards } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { WsUserGuard } from 'src/guards/ws-user.guard';
 import { Document } from 'src/models/document.entity';
 import { File } from 'src/models/file.entity';
+import { Project } from 'src/models/project.entity';
 import { Tag } from 'src/models/tag.entity';
+import { User } from 'src/models/user.entity';
+import { JwtService } from 'src/services/jwt.service';
 import { AppLogger } from 'src/utils/app-logger.util';
 import { removeRoom } from 'src/utils/socket.util';
 import { Flags } from './flags.enum';
@@ -12,14 +14,14 @@ import { AddTagDocumentReq, AddTagDocumentRes, CloseDocumentRes, CursorDocumentR
 import { CreateFileReq, RenameFileReq } from './models/file.model';
 import { ColorTagReq, RenameTagReq, TagAddFile, TagRemoveFile } from './models/tag.model';
 
-@WebSocketGateway({ namespace: "/dash", path: "/dash" })
-@UseGuards(WsUserGuard)
+@WebSocketGateway({ path: "/dash" })
 export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
 
   @WebSocketServer() server: Server;
 
   constructor(
-    private readonly _logger: AppLogger
+    private readonly _logger: AppLogger,
+    private readonly _jwt: JwtService
   ) {}
 
   afterInit(server: Server) {
@@ -27,6 +29,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   handleConnection(client: Socket) {
+    this._logger.log("New client connected");
     const data = this.getData(client);
     this._logger.log("New client connected ", data.user, data.project);
     client.join(data.project.toString());
@@ -35,7 +38,6 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   handleDisconnect(client: Socket) {
     const data = this.getData(client);
-    client.leaveAll();
     this._logger.log("Client disconnect", data.user, data.project);
     this.server.to(data.project.toString()).emit(Flags.CLOSE_PROJECT, data.user);
   }
@@ -208,11 +210,38 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     this.server.of(data.project.toString()).emit(Flags.TAG_REMOVE_FILE, body);
   }
 
+  @SubscribeMessage(Flags.RENAME_PROJECT)
+  async renameProject(client: Socket, name: string) {
+    const data = this.getData(client);
+    await Project.update(data.project, { name });
+    this.server.of(data.project.toString()).emit(Flags.RENAME_PROJECT, name);
+  }
+
+  @SubscribeMessage(Flags.ADD_USER_PROJECT)
+  async addUserProject(client: Socket, userId: string) {
+    const data = this.getData(client);
+    const project = await Project.findOne(data.project, { relations: ["users"] });
+    project.users.push(await User.findOne(userId));
+    await project.save();
+    this.server.of(data.project.toString()).emit(Flags.ADD_USER_PROJECT, userId);
+  }
+
+  @SubscribeMessage(Flags.REMOVE_USER_PROJECT)
+  async removeUserProject(client: Socket, userId: string) {
+    const data = this.getData(client);
+    const project = await Project.findOne(data.project, { relations: ["users"] });
+    project.users.slice(project.users.indexOf(await User.findOne(userId)), 1);
+    await project.save();
+    this.server.of(data.project.toString()).emit(Flags.REMOVE_USER_PROJECT, userId);
+  }
+
 
   getData(client: Socket): DataInterface {
+    if (!this._jwt.verify(client.handshake.query.authorization))
+      throw new WsException("Forbidden");
     return {
-      user: client.handshake.headers.user,
-      project: parseInt(client.handshake.query.project)
+      user: this._jwt.getUserId(client.handshake.query.authorization?.toString())?.toString(),
+      project: parseInt(client.handshake.query.project?.toString())
     }
   }
 
