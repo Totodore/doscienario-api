@@ -1,4 +1,4 @@
-import { BaseEntity, Column, Entity, JoinColumn, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Project } from "./project.entity";
 import { User } from "./user.entity";
 import { Image } from "./image.entity";
@@ -42,4 +42,10 @@ export class Document extends AppEntity {
   @ManyToMany(() => Tag)
   @JoinColumn()
   tags: Tag[];
+
+  @ManyToOne(() => User)
+  lastEditor: User;
+
+  @Column("timestamp", { default: () => "CURRENT_TIMESTAMP"})
+  lastEditing: Date
 }

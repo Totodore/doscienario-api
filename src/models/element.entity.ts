@@ -17,4 +17,11 @@ export abstract class ElementEntity extends AppEntity {
 
   @Column("timestamp", { default: () => "CURRENT_TIMESTAMP"})
   createdDate: Date;
+
+  @ManyToOne(() => User)
+  lastEditor: User;
+
+  @Column("timestamp", { default: () => "CURRENT_TIMESTAMP"})
+  lastEditing: Date
+
 }
