@@ -93,9 +93,12 @@ export class CacheService implements OnModuleInit {
     }
     doc.content = content;
     doc.updated = false;
-
-    const newId = doc.addUpdate(packet.changes);
+    const newId = doc.addUpdate(packet.changes, packet.clientId, packet.clientUpdateId);
     return [newId, packet.changes];
+  }
+
+  public getLastUpdateDoc(docId: number): Map<string, number> {
+    return this.documents.find(el => el.docId == docId).clientsUpdateId;
   }
 
   private async saveDocs() {

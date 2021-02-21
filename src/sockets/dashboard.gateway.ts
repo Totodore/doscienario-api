@@ -1,8 +1,6 @@
 import { CacheService } from './../services/cache.service';
-import { UseGuards } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
-import { title } from 'process';
-import { Server, Socket } from 'socket.io';
+import { Client, Server, Socket } from 'socket.io';
 import { UserRes } from 'src/controllers/user/user.res';
 import { Document, DocumentTypes } from 'src/models/document.entity';
 import { File } from 'src/models/file.entity';
@@ -22,6 +20,8 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @WebSocketServer() server: Server;
 
+  private users: Map<string, string> = new Map();
+
   constructor(
     private readonly _logger: AppLogger,
     private readonly _jwt: JwtService,
@@ -35,6 +35,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   handleConnection(client: Socket) {
     const data = this.getData(client);
     this._logger.log("New client connected ", data.user, data.project);
+    this.users.set(client.id, data.user);
     client.join(data.project.toString());
     this.server.to(data.project.toString()).emit(Flags.OPEN_PROJECT, data.user);
   }
@@ -42,6 +43,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   handleDisconnect(client: Socket) {
     const data = this.getData(client);
     this._logger.log("Client disconnect", data.user, data.project);
+    this.users.delete(client.id);
     this.server.to(data.project.toString()).emit(Flags.CLOSE_PROJECT, data.user);
   }
 
@@ -112,12 +114,16 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const data = this.getData(client);
     
     const [updateId, changes] = this._cache.updateDoc(body);
-    this.server.to(body.docId.toString()).emit(Flags.WRITE_DOC, new WriteDocumentRes(
-      body.docId,
-      data.user,
-      updateId,
-      changes
-    ));
+    const userUpdates = this._cache.getLastUpdateDoc(body.docId);
+    this.server.to(body.docId.toString()).clients((err: string, client: Socket) => {
+      client.emit(Flags.WRITE_DOC, new WriteDocumentRes(
+        body.docId,
+        data.user,
+        updateId,
+        changes,
+        userUpdates.get(this.users.get(client.id))
+      ));
+    });
   }
 
   /**
@@ -249,7 +255,6 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   async renameProject(client: Socket, name: string) {
     const data = this.getData(client);
     await Project.update(data.project, { name });
-    console.log(this.server.to(data.project.toString()));
     this.server.to(data.project.toString()).emit(Flags.RENAME_PROJECT, name);
   }
 
