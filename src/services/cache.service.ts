@@ -13,7 +13,7 @@ export class CacheService implements OnModuleInit {
 
   }
   onModuleInit() {
-    // setTimeout(() => () => this.saveDocs(), 1000);
+    setInterval(() => this.saveDocs(), 1000 * 30);
   }
 
   public async registerDoc(doc: DocumentStore): Promise<number> {
@@ -101,6 +101,7 @@ export class CacheService implements OnModuleInit {
   private async saveDocs() {
     for (const doc of this.documents) {
       if (!doc.updated) {
+        this.logger.log("Register cache for doc :", doc.docId, doc.content);
         await Document.update(doc.docId, { content: doc.content });
         doc.updated = true;
       }

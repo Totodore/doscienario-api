@@ -111,7 +111,6 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   async writeDoc(client: Socket, body: WriteDocumentReq) {
     const data = this.getData(client);
     
-    this._logger.log("Client write doc", body.docId);
     const [updateId, changes] = this._cache.updateDoc(body);
     this.server.to(body.docId.toString()).emit(Flags.WRITE_DOC, new WriteDocumentRes(
       body.docId,
