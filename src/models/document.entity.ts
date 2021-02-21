@@ -19,31 +19,34 @@ export class Document extends AppEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column("text", { select: false })
+  @Column("text", { select: false, nullable: true })
   content: string;
 
-  @Column("datetime")
+  @Column({ default: 'Nouveau document'})
+  title: string
+  
+  @Column("datetime", { default: () => "CURRENT_TIMESTAMP" })
   createdDate: Date;
 
   @Column("enum", { enum: DocumentTypes })
   type: DocumentTypes;
 
-  @OneToOne(() => Project)
+  @ManyToOne(() => Project, { cascade: true })
   @JoinColumn()
   project: Project;
 
-  @OneToOne(() => User)
+  @ManyToOne(() => User, { cascade: true })
   createdBy: User;
 
   @OneToMany(() => Image, image => image.document, { nullable: true })
   @JoinColumn()
   images: Image[];
 
-  @ManyToMany(() => Tag)
+  @ManyToMany(() => Tag, { nullable: true })
   @JoinColumn()
   tags: Tag[];
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { cascade: true })
   lastEditor: User;
 
   @Column("timestamp", { default: () => "CURRENT_TIMESTAMP"})

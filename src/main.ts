@@ -6,6 +6,11 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 global.atob = require("atob");
 global.Blob = require("node-blob");
 
+String.prototype.insert = function(what: string, index: number) {
+  return index > 0
+      ? this.replace(new RegExp('.{' + index + '}'), '$&' + what)
+      : what + this;
+};
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {

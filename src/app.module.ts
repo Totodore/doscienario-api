@@ -20,6 +20,7 @@ import { FileService } from './services/file.service';
 import { ResController } from './controllers/res/res.controller';
 import { DashboardGateway } from './sockets/dashboard.gateway';
 import { ProjectController } from './controllers/project/project.controller';
+import { CacheService } from './services/cache.service';
 
 @Module({
   imports: [
@@ -49,6 +50,6 @@ import { ProjectController } from './controllers/project/project.controller';
     }),
   ],
   controllers: [UserController, ResController, ProjectController],
-  providers: [JwtService, FileService, ImageService, DashboardGateway],
+  providers: [JwtService, FileService, ImageService, DashboardGateway, CacheService],
 })
 export class AppModule {}

@@ -1,8 +1,10 @@
+import { CacheService } from './../services/cache.service';
 import { UseGuards } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
+import { title } from 'process';
 import { Server, Socket } from 'socket.io';
 import { UserRes } from 'src/controllers/user/user.res';
-import { Document } from 'src/models/document.entity';
+import { Document, DocumentTypes } from 'src/models/document.entity';
 import { File } from 'src/models/file.entity';
 import { Project } from 'src/models/project.entity';
 import { Tag } from 'src/models/tag.entity';
@@ -11,7 +13,7 @@ import { JwtService } from 'src/services/jwt.service';
 import { AppLogger } from 'src/utils/app-logger.util';
 import { removeRoom } from 'src/utils/socket.util';
 import { Flags } from './flags.enum';
-import { AddTagDocumentReq, AddTagDocumentRes, CloseDocumentRes, CursorDocumentReq, CursorDocumentRes, OpenDocumentRes, RemoveTagDocumentReq, WriteDocumentReq, WriteDocumentRes } from './models/document.model';
+import { AddTagDocumentReq, AddTagDocumentRes, CloseDocumentRes, CursorDocumentReq, CursorDocumentRes, DocumentStore, OpenDocumentRes, RemoveTagDocumentReq, WriteDocumentReq, WriteDocumentRes, SendDocumentRes } from './models/document.model';
 import { CreateFileReq, RenameFileReq } from './models/file.model';
 import { ColorTagReq, RenameTagReq, TagAddFile, TagRemoveFile } from './models/tag.model';
 
@@ -22,7 +24,8 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   constructor(
     private readonly _logger: AppLogger,
-    private readonly _jwt: JwtService
+    private readonly _jwt: JwtService,
+    private readonly _cache: CacheService
   ) {}
 
   afterInit(server: Server) {
@@ -44,45 +47,78 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   /**
    * Triggered when someone open a doc, everyone in the projec is triggered
+   * If there is no docId the document is created
    * Create a new room for only this doc
    * Send the content of the document to the user
    */
   @SubscribeMessage(Flags.OPEN_DOC)
   async openDoc(client: Socket, docId: string) {
     const data = this.getData(client);
-
-    this._logger.log("Client opened doc", docId);
-    this.server.to(data.project.toString()).emit(Flags.OPEN_DOC, new OpenDocumentRes(data.user, docId));
-
-    client.join(docId);
-    client.emit(Flags.OPEN_DOC, await Document.findOne(docId, { select: ["content"] }));
+    let doc: Document;
+    if (docId) {
+      this._logger.log("Client opened doc", docId);
+      doc = await Document.findOne(docId, {
+        select: [
+          "content",
+          "id",
+          "createdBy",
+          "createdDate",
+          "lastEditing",
+          'lastEditor',
+          'title'
+        ],
+        relations: ["createdBy", "lastEditor"]
+      });
+    } else {
+      this._logger.log("Client created doc");
+      doc = await Document.create({
+        type: DocumentTypes.OTHERS,
+        project: new Project(data.project),
+        lastEditor: new User(data.user),
+        createdBy: new User(data.user)
+      }).save();
+    }
+    const lastUpdateId = await this._cache.registerDoc(new DocumentStore(doc.id));
+    
+    client.broadcast.to(data.project.toString()).emit(Flags.OPEN_DOC, new OpenDocumentRes(data.user, doc.id));
+    client.emit(Flags.SEND_DOC, new SendDocumentRes(doc, lastUpdateId));
+    client.join(doc.id.toString());
   }
 
   /**
    * Triggered when someone close a doc, everyone in the project is triggered
    * Remove the user from the doc room
+   * If there everyone has closed the room then the cache is cleared
    */
   @SubscribeMessage(Flags.CLOSE_DOC)
   closeDoc(client: Socket, docId: string) {
     const data = this.getData(client);
 
     this._logger.log("Client closed doc", docId);
-
+    const roomLength = Object.keys(this.server.sockets.adapter.rooms[docId].sockets).length;
+    this._logger.log("Clients in doc :", roomLength);
+    if (roomLength <= 1)
+      this._cache.unregisterDoc(parseInt(docId));
     client.leave(docId);
-    this.server.to(data.project.toString()).emit(Flags.CLOSE_DOC, new CloseDocumentRes(data.user, docId))
+    this.server.to(data.project.toString()).emit(Flags.CLOSE_DOC, new CloseDocumentRes(data.user, parseInt(docId)))
   }
 
   /**
    * Triggerred when someone write in a doc, everyone who openeed the doc is triggered
-   * THe doc is updated through a sql request
+   * The doc is updated via the cache service
    */
   @SubscribeMessage(Flags.WRITE_DOC)
   async writeDoc(client: Socket, body: WriteDocumentReq) {
     const data = this.getData(client);
-
+    
     this._logger.log("Client write doc", body.docId);
-    await Document.query(`UPDATE document SET content = INSERT(content, ${body.pos}, 0, ${body.content}) WHERE id = ${body.docId}`);
-    this.server.to(body.docId.toString()).emit(Flags.WRITE_DOC, new WriteDocumentRes(body, data.user));
+    const [updateId, changes] = this._cache.updateDoc(body);
+    this.server.to(body.docId.toString()).emit(Flags.WRITE_DOC, new WriteDocumentRes(
+      body.docId,
+      data.user,
+      updateId,
+      changes
+    ));
   }
 
   /**
