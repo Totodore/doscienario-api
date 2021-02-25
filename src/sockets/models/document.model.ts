@@ -20,7 +20,7 @@ export interface WriteDocumentReq {
   clientId: string;
   clientUpdateId: number;
 }
-export type Change = [1 | 0 | -1, string | number, number?]; 
+export type Change = [1 | -1, number, string]; 
 export class DocumentStore {
   public updated: boolean = true;
   public content: string;
@@ -46,7 +46,7 @@ export class WriteDocumentRes {
     public docId: number,
     public userId: string,
     public updateId: number,
-    public change: Change[],
+    public changes: Change[],
     public lastClientUpdateId: number
   ) { }
 }

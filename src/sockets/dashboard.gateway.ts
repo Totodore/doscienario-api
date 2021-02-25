@@ -80,8 +80,8 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
         createdBy: new User(data.user)
       }).save();
     }
-    const lastUpdateId = await this._cache.registerDoc(new DocumentStore(doc.id));
-    
+    const [lastUpdateId, content] = await this._cache.registerDoc(new DocumentStore(doc.id));
+    doc.content = content;
     client.broadcast.to(data.project.toString()).emit(Flags.OPEN_DOC, new OpenDocumentRes(data.user, doc.id));
     client.emit(Flags.SEND_DOC, new SendDocumentRes(doc, lastUpdateId));
     client.join(doc.id.toString());
@@ -106,24 +106,28 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   /**
-   * Triggerred when someone write in a doc, everyone who openeed the doc is triggered
+   * Triggerred when someone write in a doc
+   * We get the last client update id and we set it
    * The doc is updated via the cache service
    */
   @SubscribeMessage(Flags.WRITE_DOC)
   async writeDoc(client: Socket, body: WriteDocumentReq) {
     const data = this.getData(client);
+    //We set the new update for this specific user;
+    this._cache.getLastUpdateDoc(body.docId).set(data.user, body.clientUpdateId);
     
     const [updateId, changes] = this._cache.updateDoc(body);
     const userUpdates = this._cache.getLastUpdateDoc(body.docId);
-    this.server.to(body.docId.toString()).clients((err: string, client: Socket) => {
+    for (const clientId of Object.keys(this.server.sockets.adapter.rooms[body.docId.toString()].sockets)) {
+      const client = this.server.sockets.connected[clientId];
       client.emit(Flags.WRITE_DOC, new WriteDocumentRes(
         body.docId,
         data.user,
         updateId,
         changes,
-        userUpdates.get(this.users.get(client.id))
+        userUpdates.get(this.users.get(client.id)) || 0
       ));
-    });
+    }
   }
 
   /**

@@ -1,6 +1,7 @@
 export { };
 declare global {
   interface String {
-    insert: (this: string, str: string, num: number) => void;
+    insert: (index: number, value: string) => string;
+    delete: (from: number, length?: number) => string;
   }
 }
