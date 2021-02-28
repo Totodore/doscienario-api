@@ -11,9 +11,10 @@ import { JwtService } from 'src/services/jwt.service';
 import { AppLogger } from 'src/utils/app-logger.util';
 import { removeRoom } from 'src/utils/socket.util';
 import { Flags } from './flags.enum';
-import { AddTagDocumentReq, AddTagDocumentRes, CloseDocumentRes, CursorDocumentReq, CursorDocumentRes, DocumentStore, OpenDocumentRes, RemoveTagDocumentReq, WriteDocumentReq, WriteDocumentRes, SendDocumentRes } from './models/document.model';
+import { AddTagDocumentReq, AddTagDocumentRes, CloseDocumentRes, CursorDocumentReq, CursorDocumentRes, DocumentStore, OpenDocumentRes, RemoveTagDocumentReq, WriteDocumentReq, WriteDocumentRes, SendDocumentRes, RenameDocumentReq } from './models/document.model';
 import { CreateFileReq, RenameFileReq } from './models/file.model';
 import { ColorTagReq, RenameTagReq, TagAddFile, TagRemoveFile } from './models/tag.model';
+import { createQueryBuilder } from 'typeorm';
 
 @WebSocketGateway({ path: "/dash" })
 export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
@@ -67,9 +68,10 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
           "createdDate",
           "lastEditing",
           'lastEditor',
-          'title'
+          'title',
+          // 'tags'
         ],
-        relations: ["createdBy", "lastEditor"]
+        relations: ["createdBy", "lastEditor", "tags"]
       });
     } else {
       this._logger.log("Client created doc");
@@ -77,7 +79,8 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
         type: DocumentTypes.OTHERS,
         project: new Project(data.project),
         lastEditor: new User(data.user),
-        createdBy: new User(data.user)
+        createdBy: new User(data.user),
+        tags: []
       }).save();
     }
     const [lastUpdateId, content] = await this._cache.registerDoc(new DocumentStore(doc.id));
@@ -130,6 +133,15 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     }
   }
 
+  @SubscribeMessage(Flags.RENAME_DOC)
+  async renameDoc(client: Socket, body: RenameDocumentReq) {
+    const data = this.getData(client);
+    if (body.title?.length == 0)
+      body.title = "Nouveau document";
+    await Document.update(body.docId, { title: body.title });
+    client.broadcast.emit(Flags.RENAME_DOC, body);
+  }
+
   /**
    * Triggerred when someone move its cursor, everyone who opened the doc is triggered
    */
@@ -152,22 +164,27 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage(Flags.TAG_ADD_DOC)
   async addTagDoc(client: Socket, body: AddTagDocumentReq) {
-    this._logger.log("Client add tag to doc", body.docId, body.tagId);
+    const data = this.getData(client);
+    this._logger.log("Client add tag to doc", body.docId, body.name);
 
-    const doc = await Document.findOne(body.docId);
-    doc.tags.push(new Tag(body.tagId));
-    await doc.save();
-    this.server.to(body.docId.toString()).emit(Flags.TAG_ADD_DOC, body);
+    let doc = await Document.findOne(body.docId, { relations: ["tags"] });
+    let tag: Tag = await Tag.findOneOrCreate<Tag>({ where: { name: body.name } }, {
+      name: body.name,
+      project: new Project(data.project),
+      createdBy: new User(data.user)
+    });
+    console.log(tag);
+    await createQueryBuilder().relation(Document, "tags").of(doc).add(tag);
+    this.server.to(data.project.toString()).emit(Flags.TAG_ADD_DOC, new AddTagDocumentRes(body.docId, tag));
   }
 
   @SubscribeMessage(Flags.TAG_REMOVE_DOC)
   async removeTagDoc(client: Socket, body: RemoveTagDocumentReq) {
-    this._logger.log("Client removed tag to doc", body.docId, body.tagId);
+    this._logger.log("Client removed tag to doc", body.docId, body.name);
 
-    const doc = await Document.findOne(body.docId);
-    doc.tags = doc.tags.filter(el => el.id != body.tagId);
-    await doc.save();
-    this.server.to(body.docId.toString()).emit(Flags.TAG_REMOVE_DOC, body);
+    const doc = await Document.findOne(body.docId, { relations: ["tags"] });
+    await createQueryBuilder().relation(Document, "tags").of(doc).remove(await Tag.findOne({ where: { name: body.name } }));
+    client.broadcast.to(body.docId.toString()).emit(Flags.TAG_REMOVE_DOC, body);
   }
 
   @SubscribeMessage(Flags.CREATE_TAG)
@@ -175,10 +192,10 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const data = this.getData(client);
     this._logger.log("Client create tag", name);
 
-    if (await Tag.exists<Tag>({ where: { projectId: data.project, name: name.toLowerCase() } }))
+    if (await Tag.exists<Tag>({ where: { project: new Project(data.project), name: name.toLowerCase() } }))
       throw new WsException("Tag already exist");
 
-    await Tag.create({ createdById: data.user, projectId: data.project, name: name.toLowerCase() }).save();
+    await Tag.create({ createdBy: new User(data.user), project: new Project(data.project), name: name.toLowerCase() }).save();
     this.server.to(data.project.toString()).emit(Flags.CREATE_TAG, name);
   }
 
@@ -186,8 +203,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   async removeTag(client: Socket, tagId: string) {
     const data = this.getData(client);
     this._logger.log("Client remove tag");
-
-    await Tag.delete(tagId);
+    await (await Tag.findOne(tagId)).remove();
     this.server.to(data.project.toString()).emit(Flags.REMOVE_TAG, tagId);
   }
 

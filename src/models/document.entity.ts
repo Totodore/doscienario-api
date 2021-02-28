@@ -1,4 +1,4 @@
-import { BaseEntity, Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Project } from "./project.entity";
 import { User } from "./user.entity";
 import { Image } from "./image.entity";
@@ -42,8 +42,16 @@ export class Document extends AppEntity {
   @JoinColumn()
   images: Image[];
 
-  @ManyToMany(() => Tag, { nullable: true })
-  @JoinColumn()
+  @ManyToMany(() => Tag, tag => tag.documents, { cascade: true })
+  @JoinTable({
+    name: "document-tag",
+    joinColumn: {
+      name: "documentId", referencedColumnName: "id"
+    },
+    inverseJoinColumn: {
+      name: "tagId", referencedColumnName: "id"
+    },
+  })
   tags: Tag[];
 
   @ManyToOne(() => User, { cascade: true })

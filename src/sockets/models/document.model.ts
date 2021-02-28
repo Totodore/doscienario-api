@@ -1,3 +1,4 @@
+import { Tag } from 'src/models/tag.entity';
 import { Document } from 'src/models/document.entity';
 export class OpenDocumentRes {
   constructor(
@@ -55,6 +56,10 @@ export interface CursorDocumentReq {
   docId: number,
   pos: number,
 }
+export interface RenameDocumentReq {
+  docId: number;
+  title: string;
+}
 export class CursorDocumentRes {
 
   public docId: number;
@@ -73,9 +78,14 @@ export class CursorDocumentRes {
 export class AddTagDocumentReq {
   constructor(
     public docId: number,
-    public tagId: number,
+    public name: string,
   ) {}
 }
 export class RemoveTagDocumentReq extends AddTagDocumentReq { };
-export class AddTagDocumentRes extends AddTagDocumentReq { };
+export class AddTagDocumentRes {
+  constructor(
+    public docId: number,
+    public tag: Tag
+  ) {}
+}
 export class RemoveTagDocumentRes extends AddTagDocumentReq { };

@@ -46,7 +46,7 @@ import { CacheService } from './services/cache.service';
         Tag,
       ],
       synchronize: true,
-      logging: false
+      logging: ["error"]
     }),
   ],
   controllers: [UserController, ResController, ProjectController],

@@ -1,4 +1,4 @@
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, RelationId } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn, RelationId } from "typeorm";
 import { AppEntity } from "./app.entity";
 import { Project } from "./project.entity";
 import { User } from "./user.entity";
@@ -9,10 +9,10 @@ export class Tag extends AppEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @PrimaryColumn({ unique: true })
   name: string;
 
-  @Column()
+  @Column({ default: false })
   primary: boolean;
 
   @RelationId((tag: Tag) => tag.project)
@@ -30,5 +30,8 @@ export class Tag extends AppEntity {
   @ManyToOne(() => User)
   @JoinColumn()
   createdBy: User;
+
+  @ManyToMany(() => Tag, tag => tag.documents, { cascade: ["insert", "recover", "update"] })
+  documents: Document[]
 
 }

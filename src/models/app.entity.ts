@@ -10,7 +10,7 @@ export abstract class AppEntity extends BaseEntity implements PrimaryColumn {
   id: string | number;
 
   public static async findOneOrCreate<T extends AppEntity>(options: FindOneOptions<T>, entityLike?: DeepPartial<T>): Promise<T> {
-    return await this.findOne<T>(options) ?? this.create<T>(entityLike);
+    return await this.findOne<T>(options) ?? this.create<T>(entityLike).save()
   }
 
   public static async exists<T extends AppEntity>(options: FindOneOptions<T>): Promise<boolean> {
