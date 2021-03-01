@@ -2,7 +2,7 @@ import { BaseEntity, Column, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryC
 import { AppEntity } from "./app.entity";
 import { Project } from "./project.entity";
 import { User } from "./user.entity";
-
+import { Document } from "./document.entity";
 @Entity()
 export class Tag extends AppEntity {
 
@@ -31,7 +31,7 @@ export class Tag extends AppEntity {
   @JoinColumn()
   createdBy: User;
 
-  @ManyToMany(() => Tag, tag => tag.documents, { cascade: ["insert", "recover", "update"] })
+  @ManyToMany(() => Document, doc => doc.tags, { cascade: true })
   documents: Document[]
 
 }

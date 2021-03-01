@@ -188,23 +188,23 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage(Flags.CREATE_TAG)
-  async createTag(client: Socket, name: string) {
+  async createTag(client: Socket, tag: Tag) {
     const data = this.getData(client);
-    this._logger.log("Client create tag", name);
+    this._logger.log("Client create tag", tag);
 
-    if (await Tag.exists<Tag>({ where: { project: new Project(data.project), name: name.toLowerCase() } }))
+    if (await Tag.exists<Tag>({ where: { project: new Project(data.project), name: tag.name.toLowerCase() } }))
       throw new WsException("Tag already exist");
 
-    await Tag.create({ createdBy: new User(data.user), project: new Project(data.project), name: name.toLowerCase() }).save();
-    this.server.to(data.project.toString()).emit(Flags.CREATE_TAG, name);
+    tag = await Tag.create({ createdBy: new User(data.user), project: new Project(data.project), ...tag, color: tag.color }).save();
+    this.server.to(data.project.toString()).emit(Flags.CREATE_TAG, tag);
   }
 
   @SubscribeMessage(Flags.REMOVE_TAG)
-  async removeTag(client: Socket, tagId: string) {
+  async removeTag(client: Socket, tagName: string) {
     const data = this.getData(client);
     this._logger.log("Client remove tag");
-    await (await Tag.findOne(tagId)).remove();
-    this.server.to(data.project.toString()).emit(Flags.REMOVE_TAG, tagId);
+    await (await Tag.findOne({ where: { name: tagName } })).remove();
+    client.broadcast.to(data.project.toString()).emit(Flags.REMOVE_TAG, tagName);
   }
 
   @SubscribeMessage(Flags.RENAME_TAG)
@@ -212,8 +212,8 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const data = this.getData(client);
     this._logger.log("Client rename tag");
 
-    await Tag.update(body.id, { name: body.name });
-    this.server.to(data.project.toString()).emit(Flags.RENAME_TAG, body);
+    await createQueryBuilder(Tag).update().set({ name: body.name }).where({ name: body.oldName }).execute();
+    client.broadcast.to(data.project.toString()).emit(Flags.RENAME_TAG, body);
   }
 
   @SubscribeMessage(Flags.COLOR_TAG)
@@ -221,8 +221,8 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const data = this.getData(client);
     this._logger.log("Client update color tag");
 
-    await Tag.update(body.id, { color: body.color.toString(16) });
-    this.server.to(data.project.toString()).emit(Flags.COLOR_TAG, body);
+    await createQueryBuilder(Tag).update().set({ color: body.color.substr(1) }).where({ name: body.name }).execute();
+    client.broadcast.to(data.project.toString()).emit(Flags.COLOR_TAG, body);
   }
 
   @SubscribeMessage(Flags.CREATE_FILE)

@@ -42,7 +42,7 @@ export class Document extends AppEntity {
   @JoinColumn()
   images: Image[];
 
-  @ManyToMany(() => Tag, tag => tag.documents, { cascade: true })
+  @ManyToMany(() => Tag, tag => tag.documents, { cascade: ["insert", "recover", "update"] })
   @JoinTable({
     name: "document-tag",
     joinColumn: {

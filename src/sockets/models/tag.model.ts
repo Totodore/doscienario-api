@@ -1,14 +1,14 @@
 export class RenameTagReq {
   constructor(
     public name: string,
-    public id: string
+    public oldName: string
   ) {}
 }
 
 export class ColorTagReq {
   constructor(
-    public color: number,
-    public id: string
+    public color: string,
+    public name: string
   ) {}
 }
 
