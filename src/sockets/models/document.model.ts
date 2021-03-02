@@ -9,7 +9,8 @@ export class OpenDocumentRes {
 export class SendDocumentRes {
   constructor(
     public doc: Document,
-    public lastUpdate: number
+    public lastUpdate: number,
+    public reqId: string
   ) {}
 }
 export class CloseDocumentRes extends OpenDocumentRes { }

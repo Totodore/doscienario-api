@@ -55,7 +55,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
    * Send the content of the document to the user
    */
   @SubscribeMessage(Flags.OPEN_DOC)
-  async openDoc(client: Socket, docId: string) {
+  async openDoc(client: Socket, [reqId, docId]: [string, number]) {
     const data = this.getData(client);
     let doc: Document;
     if (docId) {
@@ -86,7 +86,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const [lastUpdateId, content] = await this._cache.registerDoc(new DocumentStore(doc.id));
     doc.content = content;
     client.broadcast.to(data.project.toString()).emit(Flags.OPEN_DOC, new OpenDocumentRes(data.user, doc.id));
-    client.emit(Flags.SEND_DOC, new SendDocumentRes(doc, lastUpdateId));
+    client.emit(Flags.SEND_DOC, new SendDocumentRes(doc, lastUpdateId, reqId));
     client.join(doc.id.toString());
   }
 
