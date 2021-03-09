@@ -1,5 +1,7 @@
 FROM node:14.15-alpine as build
 
+WORKDIR /build
+
 #Add packages to build Canvas, Webp and MozJPEG
 RUN apk add --no-cache \
     python \
@@ -31,7 +33,7 @@ FROM node:14.15-alpine
 
 WORKDIR /app
 
-COPY --from=build /dist /app
+COPY --from=build /build/dist /app
 
 #Installing webp
 RUN apk update && \
