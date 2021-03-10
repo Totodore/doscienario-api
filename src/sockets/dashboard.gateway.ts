@@ -85,9 +85,10 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     }
     const [lastUpdateId, content] = await this._cache.registerDoc(new DocumentStore(doc.id));
     doc.content = content;
-    client.broadcast.to(data.project.toString()).emit(Flags.OPEN_DOC, new OpenDocumentRes(data.user, doc.id));
     client.emit(Flags.SEND_DOC, new SendDocumentRes(doc, lastUpdateId, reqId));
     client.join(doc.id.toString());
+    delete doc.content;
+    client.broadcast.to(data.project.toString()).emit(Flags.OPEN_DOC, new OpenDocumentRes(data.user, doc));
   }
 
   /**
@@ -139,7 +140,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     if (body.title?.length == 0)
       body.title = "Nouveau document";
     await Document.update(body.docId, { title: body.title });
-    client.broadcast.emit(Flags.RENAME_DOC, body);
+    client.broadcast.to(data.project.toString()).emit(Flags.RENAME_DOC, body);
   }
 
   /**
@@ -180,11 +181,12 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage(Flags.TAG_REMOVE_DOC)
   async removeTagDoc(client: Socket, body: RemoveTagDocumentReq) {
+    const data = this.getData(client);
     this._logger.log("Client removed tag to doc", body.docId, body.name);
 
     const doc = await Document.findOne(body.docId, { relations: ["tags"] });
     await createQueryBuilder().relation(Document, "tags").of(doc).remove(await Tag.findOne({ where: { name: body.name } }));
-    client.broadcast.to(body.docId.toString()).emit(Flags.TAG_REMOVE_DOC, body);
+    client.broadcast.to(data.project.toString()).emit(Flags.TAG_REMOVE_DOC, body);
   }
 
   @SubscribeMessage(Flags.CREATE_TAG)

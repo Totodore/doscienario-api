@@ -3,7 +3,7 @@ import { Document } from 'src/models/document.entity';
 export class OpenDocumentRes {
   constructor(
     public userId: string,
-    public docId: number
+    public doc: Document
   ) {}
 }
 export class SendDocumentRes {
@@ -13,7 +13,12 @@ export class SendDocumentRes {
     public reqId: string
   ) {}
 }
-export class CloseDocumentRes extends OpenDocumentRes { }
+export class CloseDocumentRes {
+  constructor(
+    public userId: string,
+    public docId: number
+  ) {}
+}
 
 export interface WriteDocumentReq {
   docId: number;
