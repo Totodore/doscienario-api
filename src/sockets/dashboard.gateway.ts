@@ -157,9 +157,8 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   async removeDoc(client: Socket, docId: string) {
     const data = this.getData(client);
     this._logger.log("Client remove doc", docId);
-
-    await Document.delete(docId);
-    this.server.to(docId).emit(Flags.REMOVE_DOC, docId);
+    await (await Document.findOne(docId)).remove();
+    client.broadcast.to(data.project.toString()).emit(Flags.REMOVE_DOC, docId);
     removeRoom(this.server, docId);
   }
 
