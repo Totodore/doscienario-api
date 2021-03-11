@@ -3,9 +3,6 @@ import { IsNull } from "typeorm";
 
 import { ApiProperty } from '@nestjs/swagger';
 export class ImageAddDto {
-  @IsNumber()
-  @ApiProperty()
-  documentPos: number;
 
   @IsNumber()
   @ApiProperty()

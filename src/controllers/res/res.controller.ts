@@ -39,23 +39,25 @@ export class ResController {
 
   @Post("/image")
   @UseGuards(UserGuard)
-  @UseInterceptors(FileInterceptor("file"))
-  async addImage(@UploadedFile() file: Express.Multer.File, @Body() body: ImageAddDto, @GetUser() user: User) {
-    const id = uuid.v4();
-    const data = await this._images.writeImage(file.buffer, id);
-    await Image.create({
-      id,
-      addedBy: user,
-      documentId: body.documentId,
-      documentPos: body.documentPos,
-      size: data[0],
-      width: data[1],
-      height: data[2]
-    }).save();
+  @UseInterceptors(FileInterceptor("upload"))
+  async addImage(@UploadedFile() file: Express.Multer.File, @GetUser() user: User): Promise<{ url: string } | { error: { message: string } }> {
+    try {
+      const id = uuid.v4();
+      const data = await this._images.writeImage(file.buffer, id);
+      await Image.create({
+        id,
+        addedBy: user,
+        size: data[0],
+        width: data[1],
+        height: data[2]
+      }).save();
+      return { url: `${process.env.ROOT_URL}/res/image/${id}` };
+    } catch (error) {
+      return { error: { message: "Impossible d'envoyer l'image !"} };
+    }
   }
 
   @Get("/image/:id")
-  @UseGuards(UserGuard)
   @Header('Content-Type', "image/webp")
   async getImage(@Param('id') id: string, @Res() res: Response) {
     try {

@@ -22,12 +22,6 @@ export class Image extends AppEntity {
   @Column("timestamp", { default: () => "CURRENT_TIMESTAMP" })
   uploadedDate: Date;
 
-  @Column("int", { nullable: true })
-  documentPos: number;
-
-  @RelationId((image: Image) => image.document)
-  documentId: number;
-
   @ManyToOne(() => Document, { nullable: true })
   @JoinColumn()
   document: Document;
