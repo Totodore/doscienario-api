@@ -27,7 +27,7 @@ export interface WriteDocumentReq {
   clientId: string;
   clientUpdateId: number;
 }
-export type Change = [1 | -1, number, string]; 
+export type Change = [1 | -1 | 2, number, string]; 
 export class DocumentStore {
   public updated: boolean = true;
   public content: string;
