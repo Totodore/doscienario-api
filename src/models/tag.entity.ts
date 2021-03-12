@@ -1,3 +1,4 @@
+import { File } from './file.entity';
 import { BaseEntity, Column, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn, RelationId } from "typeorm";
 import { AppEntity } from "./app.entity";
 import { Project } from "./project.entity";
@@ -33,5 +34,8 @@ export class Tag extends AppEntity {
 
   @ManyToMany(() => Document, doc => doc.tags, { cascade: true })
   documents: Document[]
+
+  @ManyToMany(() => File, file => file.tags, { cascade: true })
+  files: File[];
 
 }

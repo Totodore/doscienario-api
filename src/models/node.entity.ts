@@ -16,6 +16,9 @@ export class Node extends ElementEntity {
   @Column("text")
   content: string;
 
+  @Column({ nullable: true })
+  title: string;
+
   @Column()
   blueprintId: number;
 

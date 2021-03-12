@@ -22,11 +22,11 @@ export class Image extends AppEntity {
   @Column("timestamp", { default: () => "CURRENT_TIMESTAMP" })
   uploadedDate: Date;
 
-  @ManyToOne(() => Document, { nullable: true })
-  @JoinColumn()
-  document: Document;
-
   @ManyToOne(() => User)
   @JoinColumn()
   addedBy: User;
+
+  @ManyToOne(() => Project)
+  @JoinColumn()
+  project: Project;
 }

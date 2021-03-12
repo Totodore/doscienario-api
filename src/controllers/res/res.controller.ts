@@ -1,3 +1,4 @@
+import { ExportService } from './../../services/export.service';
 import { BadRequestException, Body, Controller, Get, Header, Param, Post, Query, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GetUser, GetUserId } from 'src/decorators/user.decorator';
@@ -12,13 +13,15 @@ import * as uuid from "uuid";
 import { Image } from 'src/models/image.entity';
 import { ImageAddDto } from './image-add.dto';
 import { Response } from 'express';
+import { Project } from 'src/models/project.entity';
 
 @Controller('res')
 export class ResController {
 
   constructor(
     private readonly _files: FileService,
-    private readonly _images: ImageService
+    private readonly _images: ImageService,
+    private readonly _export: ExportService
   ) {}
 
   @Post("/file")
@@ -37,10 +40,10 @@ export class ResController {
     });
   }
 
-  @Post("/image")
+  @Post("/:id/image")
   @UseGuards(UserGuard)
   @UseInterceptors(FileInterceptor("upload"))
-  async addImage(@UploadedFile() file: Express.Multer.File, @GetUser() user: User): Promise<{ url: string } | { error: { message: string } }> {
+  async addImage(@UploadedFile() file: Express.Multer.File, @GetUser() user: User, @Param("id") projectId: number): Promise<{ url: string } | { error: { message: string } }> {
     try {
       const id = uuid.v4();
       const data = await this._images.writeImage(file.buffer, id);
@@ -49,7 +52,8 @@ export class ResController {
         addedBy: user,
         size: data[0],
         width: data[1],
-        height: data[2]
+        height: data[2],
+        project: new Project(projectId)
       }).save();
       return { url: `${process.env.ROOT_URL}/res/image/${id}` };
     } catch (error) {
@@ -84,4 +88,15 @@ export class ResController {
       throw new BadRequestException();
     }
   }
+
+  @Get("/exported-data/:id")
+  @Header("Content-Type", "application/zip")
+  public getExportedData(@Param("id") id: string, @Res() res: Response) {
+    const buffer = this._export.getFile(id);
+    res.header("Content-Length", buffer.length.toString());
+    res.write(buffer, 'binary');
+    res.end();
+    this._export.removeFile(id);
+  }
+
 }

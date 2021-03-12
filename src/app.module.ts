@@ -21,6 +21,7 @@ import { ResController } from './controllers/res/res.controller';
 import { DashboardGateway } from './sockets/dashboard.gateway';
 import { ProjectController } from './controllers/project/project.controller';
 import { CacheService } from './services/cache.service';
+import { ExportService } from './services/export.service';
 
 @Module({
   imports: [
@@ -51,6 +52,6 @@ import { CacheService } from './services/cache.service';
     }),
   ],
   controllers: [UserController, ResController, ProjectController],
-  providers: [JwtService, FileService, ImageService, DashboardGateway, CacheService],
+  providers: [JwtService, FileService, ImageService, DashboardGateway, CacheService, ExportService],
 })
 export class AppModule {}

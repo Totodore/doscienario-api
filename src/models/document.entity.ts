@@ -38,10 +38,6 @@ export class Document extends AppEntity {
   @ManyToOne(() => User, { cascade: true })
   createdBy: User;
 
-  @OneToMany(() => Image, image => image.document, { nullable: true })
-  @JoinColumn()
-  images: Image[];
-
   @ManyToMany(() => Tag, tag => tag.documents, { cascade: ["insert", "recover", "update"] })
   @JoinTable({
     name: "document-tag",

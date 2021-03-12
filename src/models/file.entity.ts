@@ -1,4 +1,4 @@
-import { BaseEntity, Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, RelationId } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, RelationId } from "typeorm";
 import { AppEntity } from "./app.entity";
 import { Project } from "./project.entity";
 import { Tag } from "./tag.entity";
@@ -39,7 +39,16 @@ export class File extends AppEntity {
   @RelationId((file: File) => file.tags)
   tagIds: number[];
 
-  @ManyToMany(() => Tag)
-  @JoinColumn()
+  @ManyToMany(() => Tag, tag => tag.files, { cascade: ["insert", "recover", "update"] })
+  @JoinTable({
+    name: "files-tag",
+    joinColumn: {
+      name: "fileId", referencedColumnName: "id"
+    },
+    inverseJoinColumn: {
+      name: "tagId", referencedColumnName: "id"
+    },
+  })
   tags: Tag[];
+
 }
