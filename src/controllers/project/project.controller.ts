@@ -1,3 +1,6 @@
+import { CacheService } from './../../services/cache.service';
+import { User } from './../../models/user.entity';
+import { Relationship } from './../../models/relationship.entity';
 import { Image } from './../../models/image.entity';
 import { Node } from './../../models/node.entity';
 import { createQueryBuilder } from 'typeorm';
@@ -8,16 +11,16 @@ import { ImageService } from './../../services/image.service';
 import { FileService } from './../../services/file.service';
 import { File } from './../../models/file.entity';
 import { Document, DocumentTypes } from 'src/models/document.entity';
-import { BadRequestException, Body, Controller, ForbiddenException, Get, Header, Param, Post, Query, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, Header, Param, Post, Query, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { GetUser, GetUserId } from 'src/decorators/user.decorator';
 import { UserGuard } from 'src/guards/user.guard';
-import { User } from 'src/models/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';
 import { ProjectAddDto } from './project-add.dto';
 import { ProjectUserDto } from './project-user.dto';
 import * as AdmZip from "adm-zip";
 import { v4 as uuid } from "uuid";
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Blueprint } from 'src/models/blueprint.entity';
 @Controller('project')
 @UseGuards(UserGuard)
 export class ProjectController {
@@ -26,7 +29,8 @@ export class ProjectController {
     private readonly _logger: AppLogger, 
     private readonly _fileManager: FileService,
     private readonly _imageManager: ImageService,
-    private readonly _exportManager: ExportService
+    private readonly _exportManager: ExportService,
+    private readonly _cacheManager: CacheService
   ) { }
 
   @Post()
@@ -57,9 +61,23 @@ export class ProjectController {
     return project;
   }
 
+  @Delete("/:id")
+  async deleteProject(@Param("id") id: number) {
+    const project = new Project(id);
+    await createQueryBuilder(Document, 'doc').relation(Tag, "tags").delete().execute();
+    await createQueryBuilder(Blueprint, 'blueprint').relation(Tag, "tags").delete().execute();
+    await Document.delete({ project });
+    await Blueprint.delete({ project });
+    await Tag.delete({ project });
+    await Image.delete({ project });
+    // await createQueryBuilder(Project, 'project').relation(User, "user").delete().execute();
+    await Project.delete({ id });
+  }
+
   @Get("/:id/export")
   async exportProject(@Param("id") id: number): Promise<{ id: string }> {
     this._logger.log("Exporting project", id);
+    await this._cacheManager.saveDocs();
     const project = await Project.findOne(id, { select: ["name", "id"]});
     const docs = await Document.find({ where: { project: new Project(id) }, relations: ["tags"], select: ["content", "title", "id"] });
     const tags = await Tag.find({ where: { project }, select: ["name", "id", "color", "primary"] });

@@ -99,7 +99,7 @@ export class CacheService implements OnModuleInit {
     return this.documents.find(el => el.docId == docId).clientsUpdateId;
   }
 
-  private async saveDocs() {
+  public async saveDocs() {
     for (const doc of this.documents) {
       if (!doc.updated) {
         this.logger.log("Register cache for doc :", doc.docId, doc.content);

@@ -31,7 +31,7 @@ export class Document extends AppEntity {
   @Column("enum", { enum: DocumentTypes })
   type: DocumentTypes;
 
-  @ManyToOne(() => Project, { cascade: true })
+  @ManyToOne(() => Project, { cascade: ["insert", "recover", "update"] })
   @JoinColumn()
   project: Project;
 
