@@ -18,6 +18,7 @@ String.prototype.delete = function(from: number, length: number = 1) {
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { cors: true });
   app.useGlobalPipes(new ValidationPipe());
+  app.enableCors();
   const config = new DocumentBuilder().setTitle('Doscenario API').setVersion('0.1').build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
