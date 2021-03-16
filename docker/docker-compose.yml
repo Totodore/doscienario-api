@@ -6,7 +6,8 @@ services:
     tty: true
     restart: always
     volumes:
-      - api-data:/data
+      - api-data:/app/data #Volume nommé
+      - ./api-data:/app/data #Volume relatif
     expose:
       - 3000
     env_file:
@@ -30,9 +31,9 @@ services:
       - "docker-ci.auth-server=https://ghcr.io"
       - "docker-ci.repo-url=ghcr.io/totodore/doscenario-api:latest"
 
-volumes:
+volumes: #On déclare le volume nommé
   api-data:
 
-networks:
-  web:
-    external: true
+networks: #On déclare le réseau web qui est utilisé
+  web: 
+    external: true #On dit que c'est un réseau "externe" (qui n'est pas propre à la stack de services ci-dessus)
