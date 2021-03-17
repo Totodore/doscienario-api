@@ -1,4 +1,4 @@
-import { BaseEntity, Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, RelationId } from "typeorm";
 import { Blueprint } from "./blueprint.entity";
 import { Relationship } from "./relationship.entity";
 import { Tag } from "./tag.entity";
@@ -36,9 +36,6 @@ export class Node extends BaseEntity {
 
   @Column({ nullable: true })
   title: string;
-
-  @Column()
-  blueprintId: number;
 
   @ManyToOne(() => Blueprint)
   blueprint: Blueprint;

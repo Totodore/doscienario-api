@@ -307,9 +307,11 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     let blueprint: Blueprint;
     if (docId) {
       this._logger.log("Client opened blueprint", docId);
-      blueprint = await Blueprint.findOne(docId, {
-        relations: ["createdBy", "lastEditor", "tags", "nodes", "nodes.tags"]
-      });
+      blueprint = await Blueprint.createQueryBuilder("blueprint").where("blueprint.id = :docId", { docId })
+        .leftJoinAndSelect("blueprint.createdBy", "createdBy")
+        .leftJoinAndSelect("blueprint.lastEditor", "lastEditor")
+        .leftJoinAndSelect("blueprint.tags", "tags")
+        .leftJoinAndSelect("blueprint.nodes", "nodes").getOne();
     } else {
       this._logger.log("Client created blueprint");
       blueprint = await Blueprint.create({
@@ -317,8 +319,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
         lastEditor: new User(data.user),
         createdBy: new User(data.user),
       }).save();
-      blueprint.nodes = [Node.create({ blueprint, isRoot: true })];
-      await blueprint.save();
+      Node.create({ blueprint, isRoot: true, createdBy: new User(data.user), lastEditor: new User(data.user), x: 0, y: 0 }).save();
     }
     client.emit(Flags.SEND_BLUEPRINT, new SendBlueprintRes(blueprint, reqId));
     client.join("blueprint-" + blueprint.id.toString());
@@ -350,7 +351,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const data = this.getData(client);
     this._logger.log("Create node for", packet.blueprint);
     const node = await Node.create({
-      blueprintId: packet.blueprint,
+      blueprint: new Blueprint(packet.blueprint),
       parentsRelations: [Relationship.create({ parentId: packet.parentNode })],
       x: packet.x,
       y: packet.y,
@@ -365,8 +366,8 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   async removeNode(client: Socket, nodeId: number) {
     const data = this.getData(client);
     this._logger.log("Remove node for", nodeId);
-    const node = await Node.findOne(nodeId);
-    const blueprintId = node.blueprintId;
+    const node = await Node.findOne(nodeId, { relations: ["blueprint"] });
+    const blueprintId = node.blueprint.id;
     await node.remove();
     client.broadcast.to("blueprint-" + blueprintId).emit(Flags.REMOVE_NODE, new RemoveNodeRes(node.id, blueprintId));
     await Blueprint.update(blueprintId, { lastEditing: new Date(), lastEditor: new User(data.user) });

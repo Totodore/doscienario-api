@@ -3,9 +3,10 @@ import { Node } from "./node.entity";
 import { Tag } from "./tag.entity";
 import { User } from "./user.entity";
 import { Project } from "./project.entity";
+import { AppEntity } from "./app.entity";
 
 @Entity()
-export class Blueprint extends BaseEntity {
+export class Blueprint extends AppEntity {
 
   @PrimaryGeneratedColumn()
   id: number;
@@ -13,7 +14,7 @@ export class Blueprint extends BaseEntity {
   @Column({ default: 'Nouvel arbre'})
   name: string;
 
-  @OneToMany(() => Node, node => node.blueprint)
+  @OneToMany(() => Node, node => node.blueprint, { cascade: true })
   @JoinColumn()
   nodes: Node[];
 
@@ -25,6 +26,7 @@ export class Blueprint extends BaseEntity {
   project: Project;
 
   @ManyToOne(() => User, { cascade: true })
+  @JoinColumn()
   createdBy: User;
 
   @ManyToMany(() => Tag, tag => tag.blueprints, { cascade: ["insert", "recover", "update"] })
@@ -40,6 +42,7 @@ export class Blueprint extends BaseEntity {
   tags: Tag[];
 
   @ManyToOne(() => User, { cascade: true })
+  @JoinColumn()
   lastEditor: User;
 
   @Column("timestamp", { default: () => "CURRENT_TIMESTAMP"})
