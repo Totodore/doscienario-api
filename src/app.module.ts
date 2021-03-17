@@ -46,7 +46,7 @@ import { ExportService } from './services/export.service';
         Sheet,
         Tag,
       ],
-      synchronize: false,
+      synchronize: true,
       logging: ["error"],
       // logging: true,
     }),

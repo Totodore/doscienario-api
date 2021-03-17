@@ -1,3 +1,7 @@
+import { Relationship } from './../models/relationship.entity';
+import { SendBlueprintRes, OpenBlueprintRes, CloseBlueprintRes, CreateNodeReq, CreateNodeRes, CreateRelationReq, RemoveRelationReq, CreateRelationRes, RemoveNodeRes } from './models/blueprint.model';
+import { Node } from './../models/node.entity';
+import { Blueprint } from './../models/blueprint.entity';
 import { CacheService } from './../services/cache.service';
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
 import { Client, Server, Socket } from 'socket.io';
@@ -37,15 +41,15 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const data = this.getData(client);
     this._logger.log("New client connected ", data.user, data.project);
     this.users.set(client.id, data.user);
-    client.join(data.project.toString());
-    this.server.to(data.project.toString()).emit(Flags.OPEN_PROJECT, data.user);
+    client.join("project-"+data.project.toString());
+    this.server.to("project-"+data.project.toString()).emit(Flags.OPEN_PROJECT, data.user);
   }
 
   handleDisconnect(client: Socket) {
     const data = this.getData(client);
     this._logger.log("Client disconnect", data.user, data.project);
     this.users.delete(client.id);
-    this.server.to(data.project.toString()).emit(Flags.CLOSE_PROJECT, data.user);
+    this.server.to("project-"+data.project.toString()).emit(Flags.CLOSE_PROJECT, data.user);
   }
 
   /**
@@ -55,7 +59,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
    * Send the content of the document to the user
    */
   @SubscribeMessage(Flags.OPEN_DOC)
-  async openDoc(client: Socket, [reqId, docId]: [string, number]) {
+  async openDoc(client: Socket, [reqId, docId]: [string, number?]) {
     const data = this.getData(client);
     let doc: Document;
     if (docId) {
@@ -86,9 +90,9 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const [lastUpdateId, content] = await this._cache.registerDoc(new DocumentStore(doc.id));
     doc.content = content;
     client.emit(Flags.SEND_DOC, new SendDocumentRes(doc, lastUpdateId, reqId));
-    client.join(doc.id.toString());
+    client.join("doc-"+doc.id.toString());
     delete doc.content;
-    client.broadcast.to(data.project.toString()).emit(Flags.OPEN_DOC, new OpenDocumentRes(data.user, doc));
+    client.broadcast.to("project-"+data.project.toString()).emit(Flags.OPEN_DOC, new OpenDocumentRes(data.user, doc));
   }
 
   /**
@@ -101,12 +105,12 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const data = this.getData(client);
 
     this._logger.log("Client closed doc", docId);
-    const roomLength = Object.keys(this.server.sockets.adapter.rooms[docId].sockets).length;
+    const roomLength = Object.keys(this.server.sockets.adapter.rooms["doc-"+docId].sockets).length;
     this._logger.log("Clients in doc :", roomLength);
     if (roomLength <= 1)
       this._cache.unregisterDoc(parseInt(docId));
-    client.leave(docId);
-    this.server.to(data.project.toString()).emit(Flags.CLOSE_DOC, new CloseDocumentRes(data.user, parseInt(docId)))
+    client.leave("doc-"+docId);
+    this.server.to("project-"+data.project.toString()).emit(Flags.CLOSE_DOC, new CloseDocumentRes(data.user, parseInt(docId)))
   }
 
   /**
@@ -122,7 +126,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     
     const [updateId, changes] = this._cache.updateDoc(body);
     const userUpdates = this._cache.getLastUpdateDoc(body.docId);
-    for (const clientId of Object.keys(this.server.sockets.adapter.rooms[body.docId.toString()].sockets)) {
+    for (const clientId of Object.keys(this.server.sockets.adapter.rooms["doc-"+body.docId.toString()].sockets)) {
       const client = this.server.sockets.connected[clientId];
       client.emit(Flags.WRITE_DOC, new WriteDocumentRes(
         body.docId,
@@ -139,8 +143,8 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const data = this.getData(client);
     if (body.title?.length == 0)
       body.title = "Nouveau document";
+    client.broadcast.to("project-"+data.project.toString()).emit(Flags.RENAME_DOC, body);
     await Document.update(body.docId, { title: body.title });
-    client.broadcast.to(data.project.toString()).emit(Flags.RENAME_DOC, body);
   }
 
   /**
@@ -150,7 +154,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   async cursorDoc(client: Socket, body: CursorDocumentReq) {
     const data = this.getData(client);
 
-    this.server.to(body.docId.toString()).emit(Flags.CURSOR_DOC, new CursorDocumentRes(body, data.user));
+    this.server.to("doc-"+body.docId.toString()).emit(Flags.CURSOR_DOC, new CursorDocumentRes(body, data.user));
   }
 
   @SubscribeMessage(Flags.REMOVE_DOC)
@@ -158,8 +162,8 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const data = this.getData(client);
     this._logger.log("Client remove doc", docId);
     await (await Document.findOne(docId)).remove();
-    client.broadcast.to(data.project.toString()).emit(Flags.REMOVE_DOC, docId);
-    removeRoom(this.server, docId);
+    client.broadcast.to("project-"+data.project.toString()).emit(Flags.REMOVE_DOC, docId);
+    removeRoom(this.server, "rom-"+docId);
   }
 
   @SubscribeMessage(Flags.TAG_ADD_DOC)
@@ -175,7 +179,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     });
     console.log(tag);
     await createQueryBuilder().relation(Document, "tags").of(doc).add(tag);
-    this.server.to(data.project.toString()).emit(Flags.TAG_ADD_DOC, new AddTagDocumentRes(body.docId, tag));
+    this.server.to("project-"+data.project.toString()).emit(Flags.TAG_ADD_DOC, new AddTagDocumentRes(body.docId, tag));
   }
 
   @SubscribeMessage(Flags.TAG_REMOVE_DOC)
@@ -185,7 +189,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
 
     const doc = await Document.findOne(body.docId, { relations: ["tags"] });
     await createQueryBuilder().relation(Document, "tags").of(doc).remove(await Tag.findOne({ where: { name: body.name } }));
-    client.broadcast.to(data.project.toString()).emit(Flags.TAG_REMOVE_DOC, body);
+    client.broadcast.to("project-"+data.project.toString()).emit(Flags.TAG_REMOVE_DOC, body);
   }
 
   @SubscribeMessage(Flags.CREATE_TAG)
@@ -197,7 +201,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
       throw new WsException("Tag already exist");
 
     tag = await Tag.create({ createdBy: new User(data.user), project: new Project(data.project), ...tag, color: tag.color }).save();
-    this.server.to(data.project.toString()).emit(Flags.CREATE_TAG, tag);
+    this.server.to("project-"+data.project.toString()).emit(Flags.CREATE_TAG, tag);
   }
 
   @SubscribeMessage(Flags.REMOVE_TAG)
@@ -205,7 +209,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const data = this.getData(client);
     this._logger.log("Client remove tag");
     await (await Tag.findOne({ where: { name: tagName } })).remove();
-    client.broadcast.to(data.project.toString()).emit(Flags.REMOVE_TAG, tagName);
+    client.broadcast.to("project-"+data.project.toString()).emit(Flags.REMOVE_TAG, tagName);
   }
 
   @SubscribeMessage(Flags.RENAME_TAG)
@@ -214,7 +218,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     this._logger.log("Client rename tag");
 
     await createQueryBuilder(Tag).update().set({ name: body.name }).where({ name: body.oldName }).execute();
-    client.broadcast.to(data.project.toString()).emit(Flags.RENAME_TAG, body);
+    client.broadcast.to("project-"+data.project.toString()).emit(Flags.RENAME_TAG, body);
   }
 
   @SubscribeMessage(Flags.COLOR_TAG)
@@ -223,7 +227,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     this._logger.log("Client update color tag");
 
     await createQueryBuilder(Tag).update().set({ color: body.color.substr(1) }).where({ name: body.name }).execute();
-    client.broadcast.to(data.project.toString()).emit(Flags.COLOR_TAG, body);
+    client.broadcast.to("project-"+data.project.toString()).emit(Flags.COLOR_TAG, body);
   }
 
   @SubscribeMessage(Flags.CREATE_FILE)
@@ -238,7 +242,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
       size: body.size,
       projectId: data.project,
     }).save();
-    this.server.to(data.project.toString()).emit(Flags.CREATE_FILE, file);
+    this.server.to("project-"+data.project.toString()).emit(Flags.CREATE_FILE, file);
   }
 
   @SubscribeMessage(Flags.GET_FILE)
@@ -251,7 +255,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   async renameFile(client: Socket, body: RenameFileReq) {
     const data = this.getData(client);
     await File.update(body.id, { path: body.path });
-    this.server.to(data.project.toString()).emit(Flags.RENAME_FILE, body);
+    this.server.to("project-"+data.project.toString()).emit(Flags.RENAME_FILE, body);
   }
 
   @SubscribeMessage(Flags.TAG_ADD_FILE)
@@ -260,7 +264,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const file = await File.findOne(body.fileId);
     file.tags.push(new Tag(body.tagId));
     file.save();
-    this.server.to(data.project.toString()).emit(Flags.TAG_ADD_FILE, body);
+    this.server.to("project-"+data.project.toString()).emit(Flags.TAG_ADD_FILE, body);
   }
 
   @SubscribeMessage(Flags.TAG_REMOVE_FILE)
@@ -269,14 +273,14 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const file = await File.findOne(body.fileId);
     file.tags = file.tags.filter(tag => tag.id != body.tagId);
     await file.save();
-    this.server.to(data.project.toString()).emit(Flags.TAG_REMOVE_FILE, body);
+    this.server.to("project-"+data.project.toString()).emit(Flags.TAG_REMOVE_FILE, body);
   }
 
   @SubscribeMessage(Flags.RENAME_PROJECT)
   async renameProject(client: Socket, name: string) {
     const data = this.getData(client);
     await Project.update(data.project, { name });
-    this.server.to(data.project.toString()).emit(Flags.RENAME_PROJECT, name);
+    this.server.to("project-"+data.project.toString()).emit(Flags.RENAME_PROJECT, name);
   }
 
   @SubscribeMessage(Flags.ADD_USER_PROJECT)
@@ -285,7 +289,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const project = await Project.findOne(data.project, { relations: ["users"] });
     project.users.push(await User.findOne(user.id));
     await project.save();
-    this.server.to(data.project.toString()).emit(Flags.ADD_USER_PROJECT, user);
+    this.server.to("project-"+data.project.toString()).emit(Flags.ADD_USER_PROJECT, user);
   }
 
   @SubscribeMessage(Flags.REMOVE_USER_PROJECT)
@@ -294,8 +298,96 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const project = await Project.findOne(data.project, { relations: ["users"] });
     project.users.slice(project.users.indexOf(await User.findOne(user.id)), 1);
     await project.save();
-    this.server.to(data.project.toString()).emit(Flags.REMOVE_USER_PROJECT, user);
+    this.server.to("project-"+data.project.toString()).emit(Flags.REMOVE_USER_PROJECT, user);
   }
+
+  @SubscribeMessage(Flags.OPEN_BLUEPRINT)
+  async openBlueprint(client: Socket, [reqId, docId]: [string, number?]) {
+    const data = this.getData(client);
+    let blueprint: Blueprint;
+    if (docId) {
+      this._logger.log("Client opened blueprint", docId);
+      blueprint = await Blueprint.findOne(docId, {
+        relations: ["createdBy", "lastEditor", "tags", "nodes", "nodes.tags"]
+      });
+    } else {
+      this._logger.log("Client created blueprint");
+      blueprint = await Blueprint.create({
+        project: new Project(data.project),
+        lastEditor: new User(data.user),
+        createdBy: new User(data.user),
+      }).save();
+      blueprint.nodes = [Node.create({ blueprint, isRoot: true })];
+      await blueprint.save();
+    }
+    client.emit(Flags.SEND_BLUEPRINT, new SendBlueprintRes(blueprint, reqId));
+    client.join("blueprint-" + blueprint.id.toString());
+    client.broadcast.to("project-"+data.project.toString()).emit(Flags.OPEN_BLUEPRINT, new OpenBlueprintRes(blueprint, data.user));
+  }
+
+  @SubscribeMessage(Flags.CLOSE_BLUEPRINT)
+  async closeBlueprint(client: Socket, docId: number) {
+    const data = this.getData(client);
+    
+    this._logger.log("Client closed blueprint", docId);
+    const roomLength = Object.keys(this.server.sockets.adapter.rooms["blueprint-" + docId].sockets).length;
+    this._logger.log("Clients in blueprint :", roomLength);
+    client.leave("blueprint-" + docId);
+    this.server.to("project-"+data.project.toString()).emit(Flags.CLOSE_BLUEPRINT, new CloseBlueprintRes(data.user, docId));
+  }
+
+  @SubscribeMessage(Flags.REMOVE_BLUEPRINT)
+  async removeBlueprint(client: Socket, docId: number) {
+    const data = this.getData(client);
+    this._logger.log("Client remove blueprint", docId);
+    await (await Blueprint.findOne(docId)).remove();
+    client.broadcast.to("project-"+data.project.toString()).emit(Flags.REMOVE_BLUEPRINT, docId);
+    removeRoom(this.server, "blueprint-"+docId);
+  }
+
+  @SubscribeMessage(Flags.CREATE_NODE)
+  async createNode(client: Socket, packet: CreateNodeReq) {
+    const data = this.getData(client);
+    this._logger.log("Create node for", packet.blueprint);
+    const node = await Node.create({
+      blueprintId: packet.blueprint,
+      parentsRelations: [Relationship.create({ parentId: packet.parentNode })],
+      x: packet.x,
+      y: packet.y,
+      createdBy: new User(data.user),
+      lastEditor: new User(data.user)
+    }).save();
+    client.broadcast.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_NODE, new CreateNodeRes(node, data.user));
+    await Blueprint.update(packet.blueprint, { lastEditing: new Date(), lastEditor: new User(data.user) });
+  }
+
+  @SubscribeMessage(Flags.REMOVE_NODE)
+  async removeNode(client: Socket, nodeId: number) {
+    const data = this.getData(client);
+    this._logger.log("Remove node for", nodeId);
+    const node = await Node.findOne(nodeId);
+    const blueprintId = node.blueprintId;
+    await node.remove();
+    client.broadcast.to("blueprint-" + blueprintId).emit(Flags.REMOVE_NODE, new RemoveNodeRes(node.id, blueprintId));
+    await Blueprint.update(blueprintId, { lastEditing: new Date(), lastEditor: new User(data.user) });
+  }
+
+  @SubscribeMessage(Flags.CREATE_RELATION)
+  async createRelation(client: Socket, packet: CreateRelationReq) {
+    this.getData(client);
+    this._logger.log("Create relation for", packet.blueprint);
+    const relation = await Relationship.create({ childId: packet.childNode, parentId: packet.parentNode }).save();
+    client.broadcast.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_RELATION, new CreateRelationRes(packet.blueprint, relation));
+  }
+
+  @SubscribeMessage(Flags.REMOVE_RELATION)
+  async removeRelation(client: Socket, packet: RemoveRelationReq) {
+    this.getData(client);
+    this._logger.log("Remove relation for", packet.blueprint);
+    await Relationship.delete({ parentId: packet.parentNode, childId: packet.childNode });
+    client.broadcast.to("blueprint-" + packet.blueprint).emit(Flags.REMOVE_RELATION, packet);
+  }
+
 
 
   getData(client: Socket): DataInterface {
