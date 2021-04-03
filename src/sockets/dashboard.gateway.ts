@@ -352,13 +352,14 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     this._logger.log("Create node for", packet.blueprint);
     const node = await Node.create({
       blueprint: new Blueprint(packet.blueprint),
-      parentsRelations: [Relationship.create({ parentId: packet.parentNode })],
       x: packet.x,
       y: packet.y,
       createdBy: new User(data.user),
       lastEditor: new User(data.user)
     }).save();
-    client.broadcast.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_NODE, new CreateNodeRes(node, data.user));
+    const rel = await Relationship.create({ parentId: packet.parentNode, childId: node.id }).save();
+    (node.parentsRelations ??= []).push(rel);
+    this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_NODE, new CreateNodeRes(node, data.user));
     await Blueprint.update(packet.blueprint, { lastEditing: new Date(), lastEditor: new User(data.user) });
   }
 
