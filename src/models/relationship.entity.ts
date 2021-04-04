@@ -1,3 +1,4 @@
+import { Blueprint } from './blueprint.entity';
 import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { AppEntity } from "./app.entity";
 import { Node } from "./node.entity";
@@ -13,11 +14,17 @@ export class Relationship extends AppEntity {
   @Column()
   childId: number;
 
-  @ManyToOne(() => Node)
-  @JoinColumn({ name: "childId" })
-  child: Node;
+  @Column()
+  ox: number;
 
-  @ManyToOne(() => Node)
-  @JoinColumn({ name: "parentId" })
-  parent: Node;
+  @Column()
+  oy: number;
+
+  @Column()
+  ex: number;
+
+  @Column()
+  ey: number;
+  @ManyToOne(() => Blueprint)
+  blueprint: Blueprint;
 }

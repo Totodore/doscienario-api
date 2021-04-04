@@ -26,7 +26,9 @@ export class CreateNodeReq {
     public parentNode: number,
     public blueprint: number,
     public x: number,
-    public y: number
+    public y: number,
+    public ox: number,
+    public oy: number
   ) { }
 }
 export class CreateNodeRes {

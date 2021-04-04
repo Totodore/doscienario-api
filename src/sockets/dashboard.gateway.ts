@@ -311,7 +311,8 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
         .leftJoinAndSelect("blueprint.createdBy", "createdBy")
         .leftJoinAndSelect("blueprint.lastEditor", "lastEditor")
         .leftJoinAndSelect("blueprint.tags", "tags")
-        .leftJoinAndSelect("blueprint.nodes", "nodes").getOne();
+        .leftJoinAndSelect("blueprint.nodes", "nodes")
+        .leftJoinAndSelect("blueprint.relationships", "relations").getOne();
     } else {
       this._logger.log("Client created blueprint");
       blueprint = await Blueprint.create({
@@ -357,9 +358,17 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
       createdBy: new User(data.user),
       lastEditor: new User(data.user)
     }).save();
-    const rel = await Relationship.create({ parentId: packet.parentNode, childId: node.id }).save();
-    (node.parentsRelations ??= []).push(rel);
+    const rel = await Relationship.create({
+      parentId: packet.parentNode,
+      childId: node.id,
+      blueprint: new Blueprint(packet.blueprint),
+      ox: packet.ox,
+      oy: packet.oy,
+      ex: packet.x,
+      ey: packet.y
+    }).save();
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_NODE, new CreateNodeRes(node, data.user));
+    this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_RELATION, new CreateRelationRes(packet.blueprint, rel));
     await Blueprint.update(packet.blueprint, { lastEditing: new Date(), lastEditor: new User(data.user) });
   }
 

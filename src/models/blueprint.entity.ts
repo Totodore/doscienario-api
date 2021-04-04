@@ -1,3 +1,4 @@
+import { Relationship } from './relationship.entity';
 import { BaseEntity, Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Node } from "./node.entity";
 import { Tag } from "./tag.entity";
@@ -18,6 +19,10 @@ export class Blueprint extends AppEntity {
   @JoinColumn()
   nodes: Node[];
 
+  @OneToMany(() => Relationship, rel => rel.blueprint, { cascade: true })
+  @JoinColumn()
+  relationships: Relationship[];
+
   @Column("datetime", { default: () => "CURRENT_TIMESTAMP" })
   createdDate: Date;
 
@@ -28,6 +33,7 @@ export class Blueprint extends AppEntity {
   @ManyToOne(() => User, { cascade: true })
   @JoinColumn()
   createdBy: User;
+
 
   @ManyToMany(() => Tag, tag => tag.blueprints, { cascade: ["insert", "recover", "update"] })
   @JoinTable({
