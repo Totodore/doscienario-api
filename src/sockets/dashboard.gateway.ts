@@ -1,5 +1,5 @@
 import { Relationship } from './../models/relationship.entity';
-import { SendBlueprintRes, OpenBlueprintRes, CloseBlueprintRes, CreateNodeReq, CreateNodeRes, CreateRelationReq, RemoveRelationReq, CreateRelationRes, RemoveNodeRes } from './models/blueprint.model';
+import { SendBlueprintRes, OpenBlueprintRes, CloseBlueprintRes, CreateNodeReq, CreateNodeRes, CreateRelationReq, RemoveRelationReq, CreateRelationRes, RemoveNodeRes, PlaceNodeIn } from './models/blueprint.model';
 import { Node } from './../models/node.entity';
 import { Blueprint } from './../models/blueprint.entity';
 import { CacheService } from './../services/cache.service';
@@ -18,7 +18,7 @@ import { Flags } from './flags.enum';
 import { AddTagDocumentReq, AddTagDocumentRes, CloseDocumentRes, CursorDocumentReq, CursorDocumentRes, DocumentStore, OpenDocumentRes, RemoveTagDocumentReq, WriteDocumentReq, WriteDocumentRes, SendDocumentRes, RenameDocumentReq } from './models/document.model';
 import { CreateFileReq, RenameFileReq } from './models/file.model';
 import { ColorTagReq, RenameTagReq, TagAddFile, TagRemoveFile } from './models/tag.model';
-import { createQueryBuilder } from 'typeorm';
+import { createQueryBuilder, getConnectionManager, getManager } from 'typeorm';
 
 @WebSocketGateway({ path: "/dash" })
 export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
@@ -370,6 +370,21 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_NODE, new CreateNodeRes(node, data.user));
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_RELATION, new CreateRelationRes(packet.blueprint, rel));
     await Blueprint.update(packet.blueprint, { lastEditing: new Date(), lastEditor: new User(data.user) });
+  }
+
+  @SubscribeMessage(Flags.PLACE_NODE)
+  async placeNode(client: Socket, packet: PlaceNodeIn) {
+    const data = this.getData(client);
+    await Node.update(packet.id, { x: packet.pos[0], y: packet.pos[1] });
+    client.broadcast.to("blueprint-" + packet.blueprintId).emit(Flags.PLACE_NODE, packet);
+    await Blueprint.update(packet.blueprintId, { lastEditing: new Date(), lastEditor: new User(data.user) });
+  }
+
+  @SubscribeMessage(Flags.PLACE_RELATIONSHIP)
+  async placeChildRel(client: Socket, packet: Relationship) {
+    this.getData(client);
+    await Relationship.update(packet.id, packet);
+    client.broadcast.to("blueprint-" + packet.blueprint).emit(Flags.PLACE_RELATIONSHIP, packet);
   }
 
   @SubscribeMessage(Flags.REMOVE_NODE)

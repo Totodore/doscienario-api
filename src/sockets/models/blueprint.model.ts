@@ -38,6 +38,13 @@ export class CreateNodeRes {
   ) {
   }
 }
+export class PlaceNodeIn {
+  constructor(
+    public blueprintId: number,
+    public id: number,
+    public pos: [number, number]
+  ) {}
+}
 export class RemoveNodeRes {
   constructor(
     public id: number,

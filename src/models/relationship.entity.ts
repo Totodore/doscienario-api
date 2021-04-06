@@ -25,6 +25,8 @@ export class Relationship extends AppEntity {
 
   @Column()
   ey: number;
+
   @ManyToOne(() => Blueprint)
+  @JoinColumn()
   blueprint: Blueprint;
 }
