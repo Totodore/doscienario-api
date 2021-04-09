@@ -45,10 +45,10 @@ export class PlaceNodeIn {
     public pos: [number, number]
   ) {}
 }
-export class RemoveNodeRes {
+export class RemoveNodeIn {
   constructor(
-    public id: number,
-    public blueprint: number
+    public nodeId: number,
+    public blueprintId: number
   ) {}
 }
 export class CreateRelationReq {

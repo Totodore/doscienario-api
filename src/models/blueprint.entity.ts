@@ -5,6 +5,7 @@ import { Tag } from "./tag.entity";
 import { User } from "./user.entity";
 import { Project } from "./project.entity";
 import { AppEntity } from "./app.entity";
+import { CONNREFUSED } from 'node:dns';
 
 @Entity()
 export class Blueprint extends AppEntity {
@@ -25,6 +26,12 @@ export class Blueprint extends AppEntity {
 
   @Column("datetime", { default: () => "CURRENT_TIMESTAMP" })
   createdDate: Date;
+
+  @Column({ nullable: true })
+  x: number;
+
+  @Column({ nullable: true })
+  y: number;
 
   @ManyToOne(() => Project, { cascade: ["insert", "recover", "update"] })
   @JoinColumn()

@@ -1,5 +1,5 @@
 import { Relationship } from './../models/relationship.entity';
-import { SendBlueprintRes, OpenBlueprintRes, CloseBlueprintRes, CreateNodeReq, CreateNodeRes, CreateRelationReq, RemoveRelationReq, CreateRelationRes, RemoveNodeRes, PlaceNodeIn } from './models/blueprint.model';
+import { SendBlueprintRes, OpenBlueprintRes, CloseBlueprintRes, CreateNodeReq, CreateNodeRes, CreateRelationReq, RemoveRelationReq, CreateRelationRes, PlaceNodeIn, RemoveNodeIn } from './models/blueprint.model';
 import { Node } from './../models/node.entity';
 import { Blueprint } from './../models/blueprint.entity';
 import { CacheService } from './../services/cache.service';
@@ -19,6 +19,7 @@ import { AddTagDocumentReq, AddTagDocumentRes, CloseDocumentRes, CursorDocumentR
 import { CreateFileReq, RenameFileReq } from './models/file.model';
 import { ColorTagReq, RenameTagReq, TagAddFile, TagRemoveFile } from './models/tag.model';
 import { createQueryBuilder, getConnectionManager, getManager } from 'typeorm';
+import { removeNodeFromTree } from 'src/utils/tree-helpers.util';
 
 @WebSocketGateway({ path: "/dash" })
 export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
@@ -320,7 +321,9 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
         lastEditor: new User(data.user),
         createdBy: new User(data.user),
       }).save();
-      Node.create({ blueprint, isRoot: true, createdBy: new User(data.user), lastEditor: new User(data.user), x: 0, y: 0 }).save();
+      const node = await Node.create({ blueprint, isRoot: true, createdBy: new User(data.user), lastEditor: new User(data.user), x: 0, y: 0 }).save();
+      blueprint.nodes = [node];
+      blueprint.relationships = [];
     }
     client.emit(Flags.SEND_BLUEPRINT, new SendBlueprintRes(blueprint, reqId));
     client.join("blueprint-" + blueprint.id.toString());
@@ -388,14 +391,16 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage(Flags.REMOVE_NODE)
-  async removeNode(client: Socket, nodeId: number) {
+  async removeNode(client: Socket, packet: RemoveNodeIn) {
     const data = this.getData(client);
-    this._logger.log("Remove node for", nodeId);
-    const node = await Node.findOne(nodeId, { relations: ["blueprint"] });
-    const blueprintId = node.blueprint.id;
-    await node.remove();
-    client.broadcast.to("blueprint-" + blueprintId).emit(Flags.REMOVE_NODE, new RemoveNodeRes(node.id, blueprintId));
-    await Blueprint.update(blueprintId, { lastEditing: new Date(), lastEditor: new User(data.user) });
+    this._logger.log("Remove node for", packet.nodeId);
+    let nodes = await Node.find({ where: { blueprint: new Blueprint(packet.blueprintId) } });
+    let relations = await Relationship.find({ where: { blueprint: new Blueprint(packet.blueprintId) } });
+    const treeData = removeNodeFromTree(packet.nodeId, nodes.map(el => el.id), relations.map(el => [el.parentId, el.childId, el.id]));
+    await Relationship.delete(treeData.rels);
+    await Node.delete(treeData.nodes);
+    client.broadcast.to("blueprint-" + packet.blueprintId).emit(Flags.REMOVE_NODE, packet);
+    await Blueprint.update(packet.blueprintId, { lastEditing: new Date(), lastEditor: new User(data.user) });
   }
 
   @SubscribeMessage(Flags.CREATE_RELATION)
