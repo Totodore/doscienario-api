@@ -51,6 +51,12 @@ export class RemoveNodeIn {
     public blueprintId: number
   ) {}
 }
+export class RenameBlueprintIn {
+  constructor(
+    public id: number,
+    public title: string
+  ) {}
+}
 export class CreateRelationReq {
   constructor(
     public parentNode: number,

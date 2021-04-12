@@ -6,6 +6,7 @@ import { Project } from "./project.entity";
 import { User } from "./user.entity";
 import { Document } from "./document.entity";
 import { Node } from "./node.entity";
+import { DataType } from './data-type.entity';
 @Entity()
 export class Tag extends AppEntity {
 
@@ -46,4 +47,5 @@ export class Tag extends AppEntity {
   @ManyToMany(() => File, file => file.tags, { cascade: true })
   files: File[];
 
+  readonly type = DataType.Document;
 }

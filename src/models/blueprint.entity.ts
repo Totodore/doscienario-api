@@ -1,3 +1,4 @@
+import { DataType } from './data-type.entity';
 import { Relationship } from './relationship.entity';
 import { BaseEntity, Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Node } from "./node.entity";
@@ -60,4 +61,6 @@ export class Blueprint extends AppEntity {
 
   @Column("timestamp", { default: () => "CURRENT_TIMESTAMP"})
   lastEditing: Date
+
+  readonly type = DataType.Blueprint;
 }

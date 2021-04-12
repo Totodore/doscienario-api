@@ -1,12 +1,12 @@
 import { Relationship } from './../models/relationship.entity';
-import { SendBlueprintRes, OpenBlueprintRes, CloseBlueprintRes, CreateNodeReq, CreateNodeRes, CreateRelationReq, RemoveRelationReq, CreateRelationRes, PlaceNodeIn, RemoveNodeIn } from './models/blueprint.model';
+import { SendBlueprintRes, OpenBlueprintRes, CloseBlueprintRes, CreateNodeReq, CreateNodeRes, CreateRelationReq, RemoveRelationReq, CreateRelationRes, PlaceNodeIn, RemoveNodeIn, RenameBlueprintIn } from './models/blueprint.model';
 import { Node } from './../models/node.entity';
 import { Blueprint } from './../models/blueprint.entity';
 import { CacheService } from './../services/cache.service';
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
 import { Client, Server, Socket } from 'socket.io';
 import { UserRes } from 'src/controllers/user/user.res';
-import { Document, DocumentTypes } from 'src/models/document.entity';
+import { Document } from 'src/models/document.entity';
 import { File } from 'src/models/file.entity';
 import { Project } from 'src/models/project.entity';
 import { Tag } from 'src/models/tag.entity';
@@ -81,7 +81,6 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     } else {
       this._logger.log("Client created doc");
       doc = await Document.create({
-        type: DocumentTypes.OTHERS,
         project: new Project(data.project),
         lastEditor: new User(data.user),
         createdBy: new User(data.user),
@@ -345,9 +344,20 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   async removeBlueprint(client: Socket, docId: number) {
     const data = this.getData(client);
     this._logger.log("Client remove blueprint", docId);
+    await Node.delete({ blueprint: new Blueprint(docId) });
+    await Relationship.delete({ blueprint: new Blueprint(docId) });
     await (await Blueprint.findOne(docId)).remove();
     client.broadcast.to("project-"+data.project.toString()).emit(Flags.REMOVE_BLUEPRINT, docId);
     removeRoom(this.server, "blueprint-"+docId);
+  }
+
+  @SubscribeMessage(Flags.RENAME_BLUEPRINT)
+  async renameBlueprint(client: Socket, packet: RenameBlueprintIn) {
+    const data = this.getData(client);
+    if (packet.title?.length == 0)
+      packet.title = "Nouveau document";
+    client.broadcast.to("project-"+data.project.toString()).emit(Flags.RENAME_BLUEPRINT, packet);
+    await Blueprint.update(packet.id, { name: packet.title });
   }
 
   @SubscribeMessage(Flags.CREATE_NODE)

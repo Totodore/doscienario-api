@@ -10,7 +10,7 @@ import { Project } from './../../models/project.entity';
 import { ImageService } from './../../services/image.service';
 import { FileService } from './../../services/file.service';
 import { File } from './../../models/file.entity';
-import { Document, DocumentTypes } from 'src/models/document.entity';
+import { Document } from 'src/models/document.entity';
 import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, Header, Param, Post, Query, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { GetUser, GetUserId } from 'src/decorators/user.decorator';
 import { UserGuard } from 'src/guards/user.guard';
@@ -55,9 +55,11 @@ export class ProjectController {
 
   @Get("/:id")
   async getProject(@Param("id") id: number, @GetUser({ joinProjects: true }) user: User): Promise<Project> {
-    const project = await Project.findOne(id, { relations: ["users", "createdBy", "tags", "blueprints"] });
+    const project = await Project.findOne(id, { relations: ["users", "createdBy", "tags"] });
     const docs = await Document.find({ where: { project }, relations: ["tags", "lastEditor"] });
+    const blueprints = await Blueprint.find({ where: { project }, relations: ["tags", "lastEditor"] });
     project.documents = docs;
+    project.blueprints = blueprints;
     return project;
   }
 
@@ -143,7 +145,6 @@ export class ProjectController {
         content: doc.content,
         title: doc.title,
         createdBy: user,
-        type: DocumentTypes.OTHERS,
         project: new Project(projectId),
         tags: doc.tags.map(oldTag => new Tag(tagMap.get(oldTag.id)))
       }).save();
