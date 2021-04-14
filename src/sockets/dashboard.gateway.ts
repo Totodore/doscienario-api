@@ -406,7 +406,11 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     this._logger.log("Remove node for", packet.nodeId);
     let nodes = await Node.find({ where: { blueprint: new Blueprint(packet.blueprintId) } });
     let relations = await Relationship.find({ where: { blueprint: new Blueprint(packet.blueprintId) } });
-    const treeData = removeNodeFromTree(packet.nodeId, nodes.map(el => el.id), relations.map(el => [el.parentId, el.childId, el.id]));
+    const treeData = removeNodeFromTree(
+      packet.nodeId,
+      nodes.filter(el => !el.isRoot).map(el => el.id),
+      relations.map(el => [el.parentId, el.childId, el.id])
+    );
     await Relationship.delete(treeData.rels);
     await Node.delete(treeData.nodes);
     client.broadcast.to("blueprint-" + packet.blueprintId).emit(Flags.REMOVE_NODE, packet);
