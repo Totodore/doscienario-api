@@ -1,5 +1,5 @@
 import { Relationship } from './../models/relationship.entity';
-import { SendBlueprintRes, OpenBlueprintRes, CloseBlueprintRes, CreateNodeReq, CreateNodeRes, CreateRelationReq, RemoveRelationReq, CreateRelationRes, PlaceNodeIn, RemoveNodeIn, RenameBlueprintIn } from './models/blueprint.model';
+import { SendBlueprintRes, OpenBlueprintRes, CloseBlueprintRes, CreateNodeReq, CreateNodeRes, CreateRelationRes, PlaceNodeIn, RemoveNodeIn, RenameBlueprintIn } from './models/blueprint.model';
 import { Node } from './../models/node.entity';
 import { Blueprint } from './../models/blueprint.entity';
 import { CacheService } from './../services/cache.service';
@@ -414,20 +414,21 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage(Flags.CREATE_RELATION)
-  async createRelation(client: Socket, packet: CreateRelationReq) {
-    this.getData(client);
-    this._logger.log("Create relation for", packet.blueprint);
-    const relation = await Relationship.create({ childId: packet.childNode, parentId: packet.parentNode }).save();
-    client.broadcast.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_RELATION, new CreateRelationRes(packet.blueprint, relation));
+  async createRelation(client: Socket, packet: Relationship) {
+    const data = this.getData(client);
+    this._logger.log("Create relation for", packet.blueprint.id);
+    const rel = await Relationship.create(packet).save();
+    this.server.to("blueprint-" + packet.blueprint.id).emit(Flags.CREATE_RELATION, new CreateRelationRes(packet.blueprint.id, rel));
+    await Blueprint.update(packet.blueprint.id, { lastEditing: new Date(), lastEditor: new User(data.user) });
   }
 
-  @SubscribeMessage(Flags.REMOVE_RELATION)
-  async removeRelation(client: Socket, packet: RemoveRelationReq) {
-    this.getData(client);
-    this._logger.log("Remove relation for", packet.blueprint);
-    await Relationship.delete({ parentId: packet.parentNode, childId: packet.childNode });
-    client.broadcast.to("blueprint-" + packet.blueprint).emit(Flags.REMOVE_RELATION, packet);
-  }
+  // @SubscribeMessage(Flags.REMOVE_RELATION)
+  // async removeRelation(client: Socket, packet: number) {
+  //   this.getData(client);
+  //   this._logger.log("Remove relation for", packet.blueprint);
+  //   await Relationship.delete({ parentId: packet.parentNode, childId: packet.childNode });
+  //   client.broadcast.to("blueprint-" + packet.blueprint).emit(Flags.REMOVE_RELATION, packet);
+  // }
 
 
 

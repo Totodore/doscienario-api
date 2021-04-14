@@ -57,13 +57,6 @@ export class RenameBlueprintIn {
     public title: string
   ) {}
 }
-export class CreateRelationReq {
-  constructor(
-    public parentNode: number,
-    public childNode: number,
-    public blueprint: number
-  ) { }
-}
 export class CreateRelationRes {
   constructor(
     public blueprint: number,
