@@ -37,6 +37,9 @@ export class Node extends BaseEntity {
   @Column({ nullable: true })
   title: string;
 
+  @Column({ default: () => "false" })
+  locked: boolean;
+
   @ManyToOne(() => Blueprint)
   blueprint: Blueprint;
 

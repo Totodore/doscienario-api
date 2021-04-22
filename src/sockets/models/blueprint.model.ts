@@ -28,7 +28,8 @@ export class CreateNodeReq {
     public x: number,
     public y: number,
     public ox: number,
-    public oy: number
+    public oy: number,
+    public locked?: boolean
   ) { }
 }
 export class CreateNodeRes {

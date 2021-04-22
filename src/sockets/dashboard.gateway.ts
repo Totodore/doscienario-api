@@ -369,7 +369,8 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
       x: packet.x,
       y: packet.y,
       createdBy: new User(data.user),
-      lastEditor: new User(data.user)
+      lastEditor: new User(data.user),
+      locked: packet.locked
     }).save();
     const rel = await Relationship.create({
       parentId: packet.parentNode,
