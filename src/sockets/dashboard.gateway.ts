@@ -179,7 +179,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     });
     console.log(tag);
     await createQueryBuilder().relation(Document, "tags").of(doc).add(tag);
-    this.server.to("project-"+data.project.toString()).emit(Flags.TAG_ADD_DOC, new AddTagDocumentRes(body.docId, tag));
+    client.broadcast.to("project-"+data.project.toString()).emit(Flags.TAG_ADD_DOC, new AddTagDocumentRes(body.docId, tag));
   }
 
   @SubscribeMessage(Flags.TAG_REMOVE_DOC)
@@ -425,6 +425,31 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const rel = await Relationship.create(packet).save();
     this.server.to("blueprint-" + packet.blueprint.id).emit(Flags.CREATE_RELATION, new CreateRelationRes(packet.blueprint.id, rel));
     await Blueprint.update(packet.blueprint.id, { lastEditing: new Date(), lastEditor: new User(data.user) });
+  }
+  
+  @SubscribeMessage(Flags.TAG_ADD_BLUEPRINT)
+  async addTagBlueprint(client: Socket, body: AddTagDocumentReq) {
+    const data = this.getData(client);
+    this._logger.log("Client add tag to blueprint", body.docId, body.name);
+
+    let doc = await Blueprint.findOne(body.docId, { relations: ["tags"] });
+    let tag: Tag = await Tag.findOneOrCreate<Tag>({ where: { name: body.name } }, {
+      name: body.name,
+      project: new Project(data.project),
+      createdBy: new User(data.user)
+    });
+    await createQueryBuilder().relation(Blueprint, "tags").of(doc).add(tag);
+    client.broadcast.to("project-"+data.project.toString()).emit(Flags.TAG_ADD_BLUEPRINT, new AddTagDocumentRes(body.docId, tag));
+  }
+
+  @SubscribeMessage(Flags.TAG_REMOVE_BLUEPRINT)
+  async removeTagBlueprint(client: Socket, body: RemoveTagDocumentReq) {
+    const data = this.getData(client);
+    this._logger.log("Client removed tag to blueprint", body.docId, body.name);
+
+    const doc = await Blueprint.findOne(body.docId, { relations: ["tags"] });
+    await createQueryBuilder().relation(Blueprint, "tags").of(doc).remove(await Tag.findOne({ where: { name: body.name } }));
+    client.broadcast.to("project-"+data.project.toString()).emit(Flags.TAG_REMOVE_BLUEPRINT, body);
   }
 
   // @SubscribeMessage(Flags.REMOVE_RELATION)
