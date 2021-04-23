@@ -225,7 +225,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const data = this.getData(client);
     this._logger.log("Client update color tag");
 
-    await createQueryBuilder(Tag).update().set({ color: body.color.substr(1) }).where({ name: body.name }).execute();
+    await createQueryBuilder(Tag).update().set({ color: body.color.replace("#", "") }).where({ name: body.name }).execute();
     client.broadcast.to("project-"+data.project.toString()).emit(Flags.COLOR_TAG, body);
   }
 
