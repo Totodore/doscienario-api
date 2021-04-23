@@ -47,5 +47,5 @@ export class Tag extends AppEntity {
   @ManyToMany(() => File, file => file.tags, { cascade: true })
   files: File[];
 
-  readonly type = DataType.Document;
+  readonly type = DataType.Tag;
 }
