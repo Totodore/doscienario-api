@@ -177,7 +177,6 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
       project: new Project(data.project),
       createdBy: new User(data.user)
     });
-    console.log(tag);
     await createQueryBuilder().relation(Document, "tags").of(doc).add(tag);
     client.broadcast.to("project-"+data.project.toString()).emit(Flags.TAG_ADD_DOC, new AddTagDocumentRes(body.docId, tag));
   }
