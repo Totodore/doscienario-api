@@ -1,25 +1,23 @@
+import { Node } from './../models/node.entity';
 import { Document } from './../models/document.entity';
 import { AppLogger } from './../utils/app-logger.util';
-import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Change, DocumentStore, WriteDocumentReq } from 'src/sockets/models/document.model';
-@Injectable()
-export class CacheService implements OnModuleInit {
+
+export class CacheUtil {
 
   private documents: DocumentStore[] = [];
   
   constructor(
-    private readonly logger: AppLogger
+    private readonly logger: AppLogger,
+    private readonly Table: typeof Document | typeof Node
   ) {
-
-  }
-  onModuleInit() {
     setInterval(() => this.saveDocs(), 1000 * 30);
   }
 
   public async registerDoc(doc: DocumentStore): Promise<[number, string]> {
     if (!this.isDocCached(doc.docId)) {
-      this.logger.log("Cache updated, new doc", doc.docId);
-      doc.content = (await Document.findOne(doc.docId, { select: ["content", "id"] })).content ?? '';
+      this.logger.log("Cache updated, new", this.Table.name, doc.docId);
+      doc.content = (await this.Table.findOne(doc.docId, { select: ["content", "id"] })).content ?? '';
       this.documents.push(doc);
       console.log(doc);
     }
@@ -27,9 +25,16 @@ export class CacheService implements OnModuleInit {
     return [docEl.docId, docEl.content];
   }
   public unregisterDoc(id: number) {
-    const index = this.documents.findIndex(el => el.docId == id);
-    this.documents.splice(index, 1);
-    this.logger.log("Cache updated, removed doc", id);
+    if (this.Table === Document) {
+      const index = this.documents.findIndex(el => el.docId == id);
+      this.documents.splice(index, 1);
+    } else {
+      for (const doc of this.documents) {
+        if (doc.parentId === id)
+          this.documents.splice(this.documents.indexOf(doc), 1);
+      }
+    }
+    this.logger.log("Cache updated, removed", this.Table.name, id);
   }
 
   /**
@@ -102,8 +107,8 @@ export class CacheService implements OnModuleInit {
   public async saveDocs() {
     for (const doc of this.documents) {
       if (!doc.updated) {
-        this.logger.log("Register cache for doc :", doc.docId, doc.content);
-        await Document.update(doc.docId, { content: doc.content });
+        this.logger.log("Register cache for", this.Table.name, ":", doc.docId, doc.content);
+        await this.Table.update(doc.docId, { content: doc.content });
         doc.updated = true;
       }
     }

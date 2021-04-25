@@ -1,6 +1,5 @@
 import { BaseEntity, Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, RelationId } from "typeorm";
 import { Blueprint } from "./blueprint.entity";
-import { Relationship } from "./relationship.entity";
 import { Tag } from "./tag.entity";
 import { User } from "./user.entity";
 
@@ -34,11 +33,11 @@ export class Node extends BaseEntity {
   @Column("text", { nullable: true })
   content: string;
 
-  @Column({ nullable: true })
-  title: string;
-
   @Column({ default: () => "false" })
   locked: boolean;
+
+  @Column("text", { nullable: true })
+  summary: string;
 
   @ManyToOne(() => Blueprint)
   blueprint: Blueprint;

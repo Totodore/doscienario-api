@@ -1,4 +1,4 @@
-import { CacheService } from './../../services/cache.service';
+import { docCache, nodeCache } from './../../main';
 import { User } from './../../models/user.entity';
 import { Relationship } from './../../models/relationship.entity';
 import { Image } from './../../models/image.entity';
@@ -30,7 +30,6 @@ export class ProjectController {
     private readonly _fileManager: FileService,
     private readonly _imageManager: ImageService,
     private readonly _exportManager: ExportService,
-    private readonly _cacheManager: CacheService
   ) { }
 
   @Post()
@@ -79,7 +78,8 @@ export class ProjectController {
   @Get("/:id/export")
   async exportProject(@Param("id") id: number): Promise<{ id: string }> {
     this._logger.log("Exporting project", id);
-    await this._cacheManager.saveDocs();
+    await docCache.saveDocs();
+    await nodeCache.saveDocs();
     const project = await Project.findOne(id, { select: ["name", "id"]});
     const docs = await Document.find({ where: { project: new Project(id) }, relations: ["tags"], select: ["content", "title", "id"] });
     const tags = await Tag.find({ where: { project }, select: ["name", "id", "color", "primary"] });

@@ -71,3 +71,10 @@ export class RemoveRelationReq {
     public childNode: number
   ) {}
 };
+export class EditContentIn {
+  constructor(
+    public node: number,
+    public content: string,
+    public blueprint: number
+  ) {}
+}

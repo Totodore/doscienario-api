@@ -1,8 +1,7 @@
 import { Relationship } from './../models/relationship.entity';
-import { SendBlueprintRes, OpenBlueprintRes, CloseBlueprintRes, CreateNodeReq, CreateNodeRes, CreateRelationRes, PlaceNodeIn, RemoveNodeIn, RenameBlueprintIn } from './models/blueprint.model';
+import { SendBlueprintRes, OpenBlueprintRes, CloseBlueprintRes, CreateNodeReq, CreateNodeRes, CreateRelationRes, PlaceNodeIn, RemoveNodeIn, RenameBlueprintIn, EditContentIn } from './models/blueprint.model';
 import { Node } from './../models/node.entity';
 import { Blueprint } from './../models/blueprint.entity';
-import { CacheService } from './../services/cache.service';
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
 import { Client, Server, Socket } from 'socket.io';
 import { UserRes } from 'src/controllers/user/user.res';
@@ -20,6 +19,7 @@ import { CreateFileReq, RenameFileReq } from './models/file.model';
 import { ColorTagReq, RenameTagReq, TagAddFile, TagRemoveFile } from './models/tag.model';
 import { createQueryBuilder, getConnectionManager, getManager } from 'typeorm';
 import { removeNodeFromTree } from 'src/utils/tree-helpers.util';
+import { docCache, nodeCache } from 'src/main';
 
 @WebSocketGateway({ path: "/dash" })
 export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
@@ -27,12 +27,10 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   @WebSocketServer() server: Server;
 
   private users: Map<string, string> = new Map();
-
   constructor(
     private readonly _logger: AppLogger,
     private readonly _jwt: JwtService,
-    private readonly _cache: CacheService
-  ) {}
+  ) { }
 
   afterInit(server: Server) {
     this._logger.log(`Websocket: namespace 'dash' initialized`);
@@ -87,7 +85,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
         tags: []
       }).save();
     }
-    const [lastUpdateId, content] = await this._cache.registerDoc(new DocumentStore(doc.id));
+    const [lastUpdateId, content] = await docCache.registerDoc(new DocumentStore(doc.id));
     doc.content = content;
     client.emit(Flags.SEND_DOC, new SendDocumentRes(doc, lastUpdateId, reqId));
     client.join("doc-"+doc.id.toString());
@@ -108,7 +106,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const roomLength = Object.keys(this.server.sockets.adapter.rooms["doc-"+docId].sockets).length;
     this._logger.log("Clients in doc :", roomLength);
     if (roomLength <= 1)
-      this._cache.unregisterDoc(parseInt(docId));
+      docCache.unregisterDoc(parseInt(docId));
     client.leave("doc-"+docId);
     this.server.to("project-"+data.project.toString()).emit(Flags.CLOSE_DOC, new CloseDocumentRes(data.user, parseInt(docId)))
   }
@@ -122,10 +120,10 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   async writeDoc(client: Socket, body: WriteDocumentReq) {
     const data = this.getData(client);
     //We set the new update for this specific user;
-    this._cache.getLastUpdateDoc(body.docId).set(data.user, body.clientUpdateId);
+    docCache.getLastUpdateDoc(body.docId).set(data.user, body.clientUpdateId);
     
-    const [updateId, changes] = this._cache.updateDoc(body);
-    const userUpdates = this._cache.getLastUpdateDoc(body.docId);
+    const [updateId, changes] = docCache.updateDoc(body);
+    const userUpdates = docCache.getLastUpdateDoc(body.docId);
     for (const clientId of Object.keys(this.server.sockets.adapter.rooms["doc-"+body.docId.toString()].sockets)) {
       const client = this.server.sockets.connected[clientId];
       client.emit(Flags.WRITE_DOC, new WriteDocumentRes(
@@ -323,6 +321,9 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
       blueprint.nodes = [node];
       blueprint.relationships = [];
     }
+    for (const node of blueprint.nodes)
+      await nodeCache.registerDoc(new DocumentStore(node.id, blueprint.id))[1];
+
     client.emit(Flags.SEND_BLUEPRINT, new SendBlueprintRes(blueprint, reqId));
     client.join("blueprint-" + blueprint.id.toString());
     client.broadcast.to("project-"+data.project.toString()).emit(Flags.OPEN_BLUEPRINT, new OpenBlueprintRes(blueprint, data.user));
@@ -331,10 +332,10 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   @SubscribeMessage(Flags.CLOSE_BLUEPRINT)
   async closeBlueprint(client: Socket, docId: number) {
     const data = this.getData(client);
-    
     this._logger.log("Client closed blueprint", docId);
     const roomLength = Object.keys(this.server.sockets.adapter.rooms["blueprint-" + docId].sockets).length;
-    this._logger.log("Clients in blueprint :", roomLength);
+    if (roomLength <= 1)
+      nodeCache.unregisterDoc(docId);
     client.leave("blueprint-" + docId);
     this.server.to("project-"+data.project.toString()).emit(Flags.CLOSE_BLUEPRINT, new CloseBlueprintRes(data.user, docId));
   }
@@ -380,9 +381,9 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
       ex: packet.x,
       ey: packet.y
     }).save();
+    await nodeCache.registerDoc(new DocumentStore(node.id, node.blueprint.id))[1];
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_NODE, new CreateNodeRes(node, data.user));
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_RELATION, new CreateRelationRes(packet.blueprint, rel));
-    await Blueprint.update(packet.blueprint, { lastEditing: new Date(), lastEditor: new User(data.user) });
   }
 
   @SubscribeMessage(Flags.PLACE_NODE)
@@ -450,6 +451,33 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     await createQueryBuilder().relation(Blueprint, "tags").of(doc).remove(await Tag.findOne({ where: { name: body.name } }));
     client.broadcast.to("project-"+data.project.toString()).emit(Flags.TAG_REMOVE_BLUEPRINT, body);
   }
+
+  @SubscribeMessage(Flags.SUMARRY_NODE)
+  async sumarryNode(client: Socket, packet: EditContentIn) {
+    const data = this.getData(client);
+    await Node.update({ id: packet.node }, { summary: packet.content });
+    client.broadcast.to("blueprint-" + packet.blueprint).emit(Flags.SUMARRY_NODE, packet);
+  }
+  @SubscribeMessage(Flags.CONTENT_NODE)
+  async contentNode(client: Socket, body: WriteDocumentReq) {
+    const data = this.getData(client);
+    //We set the new update for this specific user;
+    nodeCache.getLastUpdateDoc(body.docId).set(data.user, body.clientUpdateId);
+    
+    const [updateId, changes] = nodeCache.updateDoc(body);
+    const userUpdates = nodeCache.getLastUpdateDoc(body.docId);
+    for (const clientId of Object.keys(this.server.sockets.adapter.rooms["blueprint-"+body.docId.toString()].sockets)) {
+      const client = this.server.sockets.connected[clientId];
+      client.emit(Flags.CONTENT_NODE, new WriteDocumentRes(
+        body.docId,
+        data.user,
+        updateId,
+        changes,
+        userUpdates.get(this.users.get(client.id)) || 0
+      ));
+    }
+  }
+  
 
   // @SubscribeMessage(Flags.REMOVE_RELATION)
   // async removeRelation(client: Socket, packet: number) {

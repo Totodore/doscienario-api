@@ -1,3 +1,7 @@
+import { Document } from 'src/models/document.entity';
+import { Node } from './models/node.entity';
+import { AppLogger } from './utils/app-logger.util';
+import { CacheUtil } from './utils/cache-sys.util';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -26,3 +30,6 @@ async function bootstrap() {
   await app.listen(parseInt(process.env.PORT ?? "3000"));
 }
 bootstrap();
+
+export const nodeCache = new CacheUtil(new AppLogger(), Node);
+export const docCache = new CacheUtil(new AppLogger(), Document);

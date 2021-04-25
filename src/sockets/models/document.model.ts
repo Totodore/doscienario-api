@@ -36,6 +36,7 @@ export class DocumentStore {
   public readonly updates: Map<number, Change[]> = new Map();
   constructor(
     public docId: number,
+    public parentId?: number
   ) { }
   
   public addUpdate(changes: Change[], clientId: string, clientUpdateId: number): number {
