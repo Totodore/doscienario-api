@@ -84,17 +84,22 @@ export class ProjectController {
     const docs = await Document.find({ where: { project: new Project(id) }, relations: ["tags"], select: ["content", "title", "id"] });
     const tags = await Tag.find({ where: { project }, select: ["name", "id", "color", "primary"] });
     const images = await Image.find({ where: { project: new Project(id) }, select: ["height", "width", "id", "size"] });
+    const blueprints = await Blueprint.find({ where: { project }, select: ["id", "name", "x", "y"], relations: ["tags"] });
     // const files = await File.find({ where: { project }, select: ["mime", "path", "id"], relations: ["tags"]});
-    // const blueprints = await Blueprint.find({ where: { project }, select: ["id", "name"], relations: ["tags"] });
-    // const nodes = await Node.find({ where: project, relations: ["parentsRelations", "childsRelations", "tags"], select: ["content", "id", "blueprintId", "title"] });
+    const nodes = await createQueryBuilder(Node, "node")
+      .select(["content", "id", "blueprintId", "title", "x", "y", "isRoot", "locked", "summary"])
+      .leftJoinAndSelect("parentsRelations", "parentRels").leftJoinAndSelect("childsRelations", "childRels")
+      .leftJoinAndSelect("tags", "tags")
+      .whereInIds(blueprints.map(el => el.id)).getMany();
+    
     const zip = new AdmZip();
     zip.addFile("docs.json", Buffer.from(JSON.stringify(docs), "utf-8"));
     zip.addFile("tags.json", Buffer.from(JSON.stringify(tags), "utf-8"));
     zip.addFile("project.json", Buffer.from(JSON.stringify(project), "utf-8"));
     zip.addFile("images.json", Buffer.from(JSON.stringify(images), "utf-8"));
+    zip.addFile("blueprints.json", Buffer.from(JSON.stringify(blueprints), "utf-8"));
+    zip.addFile("nodes.json", Buffer.from(JSON.stringify(nodes)));
     // zip.addFile("files.json", Buffer.from(JSON.stringify(files)));
-    // zip.addFile("blueprints.json", Buffer.from(JSON.stringify(blueprints)));
-    // zip.addFile("nodes.json", Buffer.from(JSON.stringify(nodes)));
 
     for (const image of images)
       zip.addFile(`data/images/${image.id}`, this._imageManager.getImage(image.id), "image_dir");
@@ -116,7 +121,8 @@ export class ProjectController {
     const docs: Document[] = JSON.parse(zip.readFile("docs.json").toString("utf-8"));
     const tags: Tag[] = JSON.parse(zip.readFile("tags.json").toString("utf-8"));
     const images: Image[] = JSON.parse(zip.readFile("images.json").toString("utf-8"));
-
+    const blueprints: Blueprint[] = JSON.parse(zip.readFile("blueprints.json").toString("utf-8"));
+    const nodes: Node[] = JSON.parse(zip.readFile("nodes.json").toString("utf8"));
     /** 
      * Import project and get its id 
      */
@@ -148,6 +154,33 @@ export class ProjectController {
         project: new Project(projectId),
         tags: doc.tags.map(oldTag => new Tag(tagMap.get(oldTag.id)))
       }).save();
+    
+    /** 
+     * Create Blueprints and map the new ids 
+     */
+    const blueprintMap = new Map<number, number>();
+    for (const blueprint of blueprints) {
+      await Blueprint.create({
+        createdBy: user,
+        name: blueprint.name,
+        project: new Project(projectId),
+        tags: blueprint.tags.map(oldTag => new Tag(tagMap.get(oldTag.id))),
+        x: blueprint.x,
+        y: blueprint.y,
+      }).save();
+    }
+
+    /** 
+     * Create nodes with the mapped blueprint ids 
+     */
+    for (const node of nodes) {
+      await Node.create({
+        createdBy: user,
+        ...node,
+        tags: node.tags.map(oldTag => new Tag(tagMap.get(oldTag.id))),
+        blueprint: new Blueprint(blueprintMap.get(node.blueprint.id)),
+      }).save();
+    }
     /** 
      * Importing the images buffer 
      */
