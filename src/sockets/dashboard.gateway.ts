@@ -399,6 +399,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   @SubscribeMessage(Flags.PLACE_RELATIONSHIP)
   async placeChildRel(client: Socket, packet: Relationship) {
     this.getData(client);
+    delete packet.blueprintId;
     await Relationship.update(packet.id, packet);
     client.broadcast.to("blueprint-" + packet.blueprint).emit(Flags.PLACE_RELATIONSHIP, packet);
   }
