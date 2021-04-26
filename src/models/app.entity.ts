@@ -2,9 +2,10 @@ import { BaseEntity, DeepPartial, FindOneOptions, getManager, SaveOptions } from
 
 export abstract class AppEntity extends BaseEntity implements PrimaryColumn {
 
-  constructor(id: string | number) {
+  constructor(id?: string | number) {
     super();
-    this.id = id;
+    if (id)
+      this.id = id;
   }
 
   id: string | number;
