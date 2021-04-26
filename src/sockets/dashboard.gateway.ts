@@ -1,5 +1,5 @@
 import { Relationship } from './../models/relationship.entity';
-import { SendBlueprintRes, OpenBlueprintRes, CloseBlueprintRes, CreateNodeReq, CreateNodeRes, CreateRelationRes, PlaceNodeIn, RemoveNodeIn, RenameBlueprintIn, EditContentIn } from './models/blueprint.model';
+import { SendBlueprintRes, OpenBlueprintRes, CloseBlueprintRes, CreateNodeReq, CreateNodeRes, CreateRelationRes, PlaceNodeIn, RemoveNodeIn, RenameBlueprintIn, EditSumarryIn, WriteNodeContentIn, WriteNodeContentOut } from './models/blueprint.model';
 import { Node } from './../models/node.entity';
 import { Blueprint } from './../models/blueprint.entity';
 import { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
@@ -161,7 +161,8 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     this._logger.log("Client remove doc", docId);
     await (await Document.findOne(docId)).remove();
     client.broadcast.to("project-"+data.project.toString()).emit(Flags.REMOVE_DOC, docId);
-    removeRoom(this.server, "rom-"+docId);
+    removeRoom(this.server, "doc-" + docId);
+    docCache.unregisterDoc(parseInt(docId));
   }
 
   @SubscribeMessage(Flags.TAG_ADD_DOC)
@@ -335,7 +336,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     this._logger.log("Client closed blueprint", docId);
     const roomLength = Object.keys(this.server.sockets.adapter.rooms["blueprint-" + docId].sockets).length;
     if (roomLength <= 1)
-      nodeCache.unregisterDoc(docId);
+      nodeCache.unregisterDoc(docId, true);
     client.leave("blueprint-" + docId);
     this.server.to("project-"+data.project.toString()).emit(Flags.CLOSE_BLUEPRINT, new CloseBlueprintRes(data.user, docId));
   }
@@ -348,7 +349,8 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     await Relationship.delete({ blueprint: new Blueprint(docId) });
     await (await Blueprint.findOne(docId)).remove();
     client.broadcast.to("project-"+data.project.toString()).emit(Flags.REMOVE_BLUEPRINT, docId);
-    removeRoom(this.server, "blueprint-"+docId);
+    removeRoom(this.server, "blueprint-" + docId);
+    nodeCache.unregisterDoc(docId, true);
   }
 
   @SubscribeMessage(Flags.RENAME_BLUEPRINT)
@@ -416,6 +418,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     await Node.delete(treeData.nodes);
     client.broadcast.to("blueprint-" + packet.blueprintId).emit(Flags.REMOVE_NODE, packet);
     await Blueprint.update(packet.blueprintId, { lastEditing: new Date(), lastEditor: new User(data.user) });
+    nodeCache.unregisterDoc(packet.nodeId);
   }
 
   @SubscribeMessage(Flags.CREATE_RELATION)
@@ -453,41 +456,17 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage(Flags.SUMARRY_NODE)
-  async sumarryNode(client: Socket, packet: EditContentIn) {
-    const data = this.getData(client);
+  async sumarryNode(client: Socket, packet: EditSumarryIn) {
+    this.getData(client);
     await Node.update({ id: packet.node }, { summary: packet.content });
     client.broadcast.to("blueprint-" + packet.blueprint).emit(Flags.SUMARRY_NODE, packet);
   }
   @SubscribeMessage(Flags.CONTENT_NODE)
-  async contentNode(client: Socket, body: WriteDocumentReq) {
-    const data = this.getData(client);
-    //We set the new update for this specific user;
-    nodeCache.getLastUpdateDoc(body.docId).set(data.user, body.clientUpdateId);
-    
-    const [updateId, changes] = nodeCache.updateDoc(body);
-    const userUpdates = nodeCache.getLastUpdateDoc(body.docId);
-    for (const clientId of Object.keys(this.server.sockets.adapter.rooms["blueprint-"+body.docId.toString()].sockets)) {
-      const client = this.server.sockets.connected[clientId];
-      client.emit(Flags.CONTENT_NODE, new WriteDocumentRes(
-        body.docId,
-        data.user,
-        updateId,
-        changes,
-        userUpdates.get(this.users.get(client.id)) || 0
-      ));
-    }
+  async contentNode(client: Socket, body: WriteNodeContentIn) {
+    this.getData(client);
+    nodeCache.updateDoc(body)[1];
+    client.broadcast.to("blueprint-" + body.blueprintId.toString()).emit(Flags.CONTENT_NODE, body);
   }
-  
-
-  // @SubscribeMessage(Flags.REMOVE_RELATION)
-  // async removeRelation(client: Socket, packet: number) {
-  //   this.getData(client);
-  //   this._logger.log("Remove relation for", packet.blueprint);
-  //   await Relationship.delete({ parentId: packet.parentNode, childId: packet.childNode });
-  //   client.broadcast.to("blueprint-" + packet.blueprint).emit(Flags.REMOVE_RELATION, packet);
-  // }
-
-
 
   getData(client: Socket): DataInterface {
     if (!this._jwt.verify(client.handshake.query.authorization))

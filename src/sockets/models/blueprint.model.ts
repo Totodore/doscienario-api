@@ -2,6 +2,7 @@ import { Node } from './../../models/node.entity';
 import { Relationship } from './../../models/relationship.entity';
 import { User } from './../../models/user.entity';
 import { Blueprint } from 'src/models/blueprint.entity';
+import { Change } from './document.model';
 export class SendBlueprintRes {
   constructor(
     public blueprint: Blueprint,
@@ -71,10 +72,19 @@ export class RemoveRelationReq {
     public childNode: number
   ) {}
 };
-export class EditContentIn {
+export class EditSumarryIn {
   constructor(
     public node: number,
     public content: string,
     public blueprint: number
   ) {}
 }
+export class WriteNodeContentIn {
+  constructor(
+    public changes: Change[],
+    public nodeId: number,
+    public userId: string,
+    public blueprintId: number
+  ) {}
+}
+export const WriteNodeContentOut = WriteNodeContentIn;

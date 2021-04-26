@@ -2,6 +2,7 @@ import { Node } from './../models/node.entity';
 import { Document } from './../models/document.entity';
 import { AppLogger } from './../utils/app-logger.util';
 import { Change, DocumentStore, WriteDocumentReq } from 'src/sockets/models/document.model';
+import { WriteNodeContentIn } from 'src/sockets/models/blueprint.model';
 
 export class CacheUtil {
 
@@ -24,8 +25,8 @@ export class CacheUtil {
     const docEl = this.documents.find(el => el.docId == doc.docId);
     return [docEl.docId, docEl.content];
   }
-  public unregisterDoc(id: number) {
-    if (this.Table === Document) {
+  public unregisterDoc(id: number, all = false) {
+    if (!all) {
       const index = this.documents.findIndex(el => el.docId == id);
       this.documents.splice(index, 1);
     } else {
@@ -43,9 +44,9 @@ export class CacheUtil {
    * if there is no addition it stores from where to where there is one
    * [Sorcellerie qui gère le multi éditing]
    */
-  public updateDoc(packet: WriteDocumentReq): [number, Change[]] {
+  public updateDoc(packet: WriteDocumentReq | WriteNodeContentIn): [number, Change[]] {
     //On récupère le document
-    const doc = this.documents.find(el => el.docId == packet.docId);
+    const doc = this.documents.find(el => el.docId == ((packet as WriteDocumentReq).docId ?? (packet as WriteNodeContentIn).nodeId));
     //On part du dernier ID du packet recu jusqu'au dernière id du document, 
     // for (let updateIndex = packet.lastUpdateId + 1; updateIndex <= doc.lastId; updateIndex++) {
     //   //On récupère chaque update depuis le dernière id du packet jusqu'au dernier id actuel
@@ -76,7 +77,7 @@ export class CacheUtil {
     //     }
     //   }
     // }
-    let content: string = doc.content;
+    let content: string = doc.content || "";
     let stepIndex: number = 0;
     //Pour chaque nouveau changement on fait la mise à jour à partir du packet modifié par l'agorithme ci-dessus
     for (const change of packet.changes) {
@@ -96,7 +97,9 @@ export class CacheUtil {
     }
     doc.content = content;
     doc.updated = false;
-    const newId = doc.addUpdate(packet.changes, packet.clientId, packet.clientUpdateId);
+    let newId: number;
+    if (!(packet instanceof WriteNodeContentIn))
+      newId = doc.addUpdate(packet.changes, packet.clientId, packet.clientUpdateId);
     return [newId, packet.changes];
   }
 
