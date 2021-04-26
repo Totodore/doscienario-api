@@ -197,13 +197,11 @@ export class ProjectController {
         tags: node.tags?.map(oldTag => tagMap.get(oldTag.id))
       }).save()).id);
     }
-    console.log(nodeMap);
 
     /** 
      * Create relationships with the mapped blueprint ids 
      */
     this._logger.log("6 - Import blueprint relationships into Database")
-    console.log(relationships);
     await createQueryBuilder(Relationship).insert().values(relationships.map(rel => Relationship.create({
       ...rel,
       id: null,
