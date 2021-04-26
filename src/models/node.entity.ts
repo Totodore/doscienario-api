@@ -42,6 +42,9 @@ export class Node extends BaseEntity {
   @ManyToOne(() => Blueprint)
   blueprint: Blueprint;
 
+  @RelationId((node: Node) => node.blueprint)
+  blueprintId: number;
+
   @ManyToMany(() => Tag, tag => tag.nodes, { cascade: ["insert", "recover", "update"] })
   @JoinTable({
     name: "node-tag",

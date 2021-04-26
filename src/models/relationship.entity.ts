@@ -1,5 +1,5 @@
 import { Blueprint } from './blueprint.entity';
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, RelationId } from "typeorm";
 import { AppEntity } from "./app.entity";
 import { Node } from "./node.entity";
 
@@ -29,4 +29,7 @@ export class Relationship extends AppEntity {
   @ManyToOne(() => Blueprint)
   @JoinColumn()
   blueprint: Blueprint;
+
+  @RelationId((rel: Relationship) => rel.blueprint)
+  blueprintId: number;
 }
