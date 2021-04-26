@@ -1,6 +1,6 @@
+import { Relationship } from './../../models/relationship.entity';
 import { docCache, nodeCache } from './../../main';
 import { User } from './../../models/user.entity';
-import { Relationship } from './../../models/relationship.entity';
 import { Image } from './../../models/image.entity';
 import { Node } from './../../models/node.entity';
 import { createQueryBuilder } from 'typeorm';
@@ -9,7 +9,6 @@ import { Tag } from './../../models/tag.entity';
 import { Project } from './../../models/project.entity';
 import { ImageService } from './../../services/image.service';
 import { FileService } from './../../services/file.service';
-import { File } from './../../models/file.entity';
 import { Document } from 'src/models/document.entity';
 import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, Header, Param, Post, Query, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { GetUser, GetUserId } from 'src/decorators/user.decorator';
@@ -65,13 +64,17 @@ export class ProjectController {
   @Delete("/:id")
   async deleteProject(@Param("id") id: number) {
     const project = new Project(id);
-    await createQueryBuilder(Document, 'doc').relation(Tag, "tags").delete().execute();
-    await createQueryBuilder(Blueprint, 'blueprint').relation(Tag, "tags").delete().execute();
-    await Document.delete({ project });
-    await Blueprint.delete({ project });
+    await nodeCache.saveDocs();
+    await docCache.saveDocs();
+    for (const document of await Document.find({ project }))
+      await document.remove();
+    for (const blueprint of await Blueprint.find({ project })) {
+      await Node.delete({ blueprint });
+      await Relationship.delete({ blueprint });
+      await blueprint.remove();
+    }
     await Tag.delete({ project });
     await Image.delete({ project });
-    // await createQueryBuilder(Project, 'project').relation(User, "user").delete().execute();
     await Project.delete({ id });
   }
 
@@ -84,14 +87,19 @@ export class ProjectController {
     const docs = await Document.find({ where: { project: new Project(id) }, relations: ["tags"], select: ["content", "title", "id"] });
     const tags = await Tag.find({ where: { project }, select: ["name", "id", "color", "primary"] });
     const images = await Image.find({ where: { project: new Project(id) }, select: ["height", "width", "id", "size"] });
-    const blueprints = await Blueprint.find({ where: { project }, select: ["id", "name", "x", "y"], relations: ["tags"] });
+    const blueprints = await Blueprint.find({ where: { project }, select: ["id", "name", "x", "y"], relations: ["tags", "nodes", "relationships"] });
     // const files = await File.find({ where: { project }, select: ["mime", "path", "id"], relations: ["tags"]});
-    const nodes = await createQueryBuilder(Node, "node")
-      .select(["content", "id", "blueprintId", "title", "x", "y", "isRoot", "locked", "summary"])
-      .leftJoinAndSelect("parentsRelations", "parentRels").leftJoinAndSelect("childsRelations", "childRels")
-      .leftJoinAndSelect("tags", "tags")
-      .whereInIds(blueprints.map(el => el.id)).getMany();
-    
+    const nodes: Node[] = blueprints.reduce((prev, curr) => {
+      const nodes = curr.nodes;
+      delete curr.nodes;
+      return [...prev, ...nodes];
+    }, []);
+    const rels: Relationship[] = blueprints.reduce((prev, curr) => {
+      const rels = curr.relationships;
+      delete curr.relationships;
+      return [...prev, ...rels];
+    }, []);
+  
     const zip = new AdmZip();
     zip.addFile("docs.json", Buffer.from(JSON.stringify(docs), "utf-8"));
     zip.addFile("tags.json", Buffer.from(JSON.stringify(tags), "utf-8"));
@@ -99,6 +107,7 @@ export class ProjectController {
     zip.addFile("images.json", Buffer.from(JSON.stringify(images), "utf-8"));
     zip.addFile("blueprints.json", Buffer.from(JSON.stringify(blueprints), "utf-8"));
     zip.addFile("nodes.json", Buffer.from(JSON.stringify(nodes)));
+    zip.addFile("relationships.json", Buffer.from(JSON.stringify(rels)));
     // zip.addFile("files.json", Buffer.from(JSON.stringify(files)));
 
     for (const image of images)
@@ -122,68 +131,91 @@ export class ProjectController {
     const tags: Tag[] = JSON.parse(zip.readFile("tags.json").toString("utf-8"));
     const images: Image[] = JSON.parse(zip.readFile("images.json").toString("utf-8"));
     const blueprints: Blueprint[] = JSON.parse(zip.readFile("blueprints.json").toString("utf-8"));
-    const nodes: Node[] = JSON.parse(zip.readFile("nodes.json").toString("utf8"));
+    const nodes: Node[] = JSON.parse(zip.readFile("nodes.json").toString("utf-8"));
+    const relationships: Relationship[] = JSON.parse(zip.readFile("relationships.json").toString("utf-8"));
     /** 
      * Import project and get its id 
      */
     const projectId = (await Project.create({ name: project.name, createdBy: user, users: [user] }).save()).id;
     // Import all images
+    this._logger.log("1 - Import image into Database");
     for (const img of images)
       await Image.create({...img, project: new Project(projectId)}).save();
-    /** 
+    
+    /**
      * Create a tag map for corresponding new id to old id 
      */
-    const tagMap: Map<number, number> = new Map<number, number>();
-    for (const tag of tags)
-      tagMap.set(tag.id, (await Tag.create({
-        name: tag.name,
-        color: tag.color,
-        primary: tag.primary,
+    this._logger.log("2 - Import tags into Database");
+    const tagMap = new Map<number, Tag>();
+    for (const tag of tags) {
+      tagMap.set(tag.id, await Tag.create({
+        ...tag,
+        id: null,
         createdBy: user,
         project: new Project(projectId),
-      }).save()).id);
+      }).save());
+    }
     
     /** 
      * Create docs with the new tag list for the docs 
      */
-    for (const doc of docs)
-      await Document.create({
-        content: doc.content,
-        title: doc.title,
-        createdBy: user,
-        project: new Project(projectId),
-        tags: doc.tags.map(oldTag => new Tag(tagMap.get(oldTag.id)))
-      }).save();
+    this._logger.log("3 - Import documents into Database");
+    await createQueryBuilder(Document).insert().values(docs.map(doc => Document.create({
+      ...doc,
+      id: null,
+      createdBy: user,
+      project: new Project(projectId),  
+      tags: doc.tags?.map(oldTag => tagMap.get(oldTag.id))
+    }))).execute();
     
     /** 
      * Create Blueprints and map the new ids 
      */
-    const blueprintMap = new Map<number, number>();
+    this._logger.log("4 - Import blueprints into Database");
+    const blueprintMap = new Map<number, Blueprint>();
     for (const blueprint of blueprints) {
-      await Blueprint.create({
+      blueprintMap.set(blueprint.id, await Blueprint.create({
+        ...blueprint,
+        id: null,
         createdBy: user,
-        name: blueprint.name,
         project: new Project(projectId),
-        tags: blueprint.tags.map(oldTag => new Tag(tagMap.get(oldTag.id))),
-        x: blueprint.x,
-        y: blueprint.y,
-      }).save();
+        tags: blueprint.tags?.map(oldTag => tagMap.get(oldTag.id))
+      }).save());
     }
 
     /** 
      * Create nodes with the mapped blueprint ids 
      */
+    this._logger.log("5 - Import blueprint nodes into Database");
+    const nodeMap = new Map<number, number>();
     for (const node of nodes) {
-      await Node.create({
-        createdBy: user,
+      nodeMap.set(node.id, (await Node.create({
         ...node,
-        tags: node.tags.map(oldTag => new Tag(tagMap.get(oldTag.id))),
-        blueprint: new Blueprint(blueprintMap.get(node.blueprint.id)),
-      }).save();
+        id: null,
+        createdBy: user,
+        blueprint: blueprintMap.get(node.blueprintId),
+        tags: node.tags?.map(oldTag => tagMap.get(oldTag.id))
+      }).save()).id);
     }
+    console.log(nodeMap);
+
+    /** 
+     * Create relationships with the mapped blueprint ids 
+     */
+    this._logger.log("6 - Import blueprint relationships into Database")
+    console.log(relationships);
+    await createQueryBuilder(Relationship).insert().values(relationships.map(rel => Relationship.create({
+      ...rel,
+      id: null,
+      blueprint: blueprintMap.get(rel.blueprintId),
+      childId: nodeMap.get(rel.childId),
+      parentId: nodeMap.get(rel.parentId)
+    }))).execute();
+
     /** 
      * Importing the images buffer 
      */
+    this._logger.log("6 - Importing buffer images into filesystem");
     for (const img of zip.getEntries().filter(el => el.comment === "image_dir"))
       await this._imageManager.writeImage(img.getData(), img.name);
   }
