@@ -20,7 +20,6 @@ export class CacheUtil {
       this.logger.log("Cache updated, new", this.Table.name, doc.docId);
       doc.content = (await this.Table.findOne(doc.docId, { select: ["content", "id"] })).content ?? '';
       this.documents.push(doc);
-      console.log(doc);
     }
     const docEl = this.documents.find(el => el.docId == doc.docId);
     return [docEl.docId, docEl.content];
