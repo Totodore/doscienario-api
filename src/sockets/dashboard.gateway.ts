@@ -323,7 +323,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
       blueprint.relationships = [];
     }
     for (const node of blueprint.nodes)
-      await nodeCache.registerDoc(new DocumentStore(node.id, blueprint.id))[1];
+      node.content = (await nodeCache.registerDoc(new DocumentStore(node.id, blueprint.id)))[1];
 
     client.emit(Flags.SEND_BLUEPRINT, new SendBlueprintRes(blueprint, reqId));
     client.join("blueprint-" + blueprint.id.toString());
@@ -383,7 +383,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
       ex: packet.x,
       ey: packet.y
     }).save();
-    await nodeCache.registerDoc(new DocumentStore(node.id, node.blueprint.id))[1];
+    await nodeCache.registerDoc(new DocumentStore(node.id, node.blueprint.id));
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_NODE, new CreateNodeRes(node, data.user));
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_RELATION, new CreateRelationRes(packet.blueprint, rel));
   }
@@ -465,7 +465,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   @SubscribeMessage(Flags.CONTENT_NODE)
   async contentNode(client: Socket, body: WriteNodeContentIn) {
     this.getData(client);
-    nodeCache.updateDoc(body)[1];
+    nodeCache.updateDoc(body);
     client.broadcast.to("blueprint-" + body.blueprintId.toString()).emit(Flags.CONTENT_NODE, body);
   }
 
