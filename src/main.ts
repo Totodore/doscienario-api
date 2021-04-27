@@ -1,3 +1,7 @@
+import { Document } from 'src/models/document.entity';
+import { Node } from './models/node.entity';
+import { AppLogger } from './utils/app-logger.util';
+import { CacheUtil } from './utils/cache-sys.util';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -19,10 +23,10 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { cors: true });
   app.useGlobalPipes(new ValidationPipe());
   app.enableCors();
-  const config = new DocumentBuilder().setTitle('Doscenario API').setVersion('0.1').build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
 
   await app.listen(parseInt(process.env.PORT ?? "3000"));
 }
 bootstrap();
+
+export const nodeCache = new CacheUtil(new AppLogger(), Node);
+export const docCache = new CacheUtil(new AppLogger(), Document);

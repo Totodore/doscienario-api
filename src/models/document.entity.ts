@@ -5,13 +5,7 @@ import { Image } from "./image.entity";
 import { Tag } from "./tag.entity";
 import { AppEntity } from "./app.entity";
 import { Exclude } from "class-transformer";
-
-export enum DocumentTypes {
-  HISTORY = "HISTORY",
-  CHARACTERS = "CHARACTERS",
-  PLACES = "PLACES",
-  OTHERS = "OTHERS"
-}
+import { DataType } from "./data-type.entity";
 
 @Entity()
 export class Document extends AppEntity {
@@ -27,9 +21,6 @@ export class Document extends AppEntity {
   
   @Column("datetime", { default: () => "CURRENT_TIMESTAMP" })
   createdDate: Date;
-
-  @Column("enum", { enum: DocumentTypes })
-  type: DocumentTypes;
 
   @ManyToOne(() => Project, { cascade: ["insert", "recover", "update"] })
   @JoinColumn()
@@ -53,6 +44,8 @@ export class Document extends AppEntity {
   @ManyToOne(() => User, { cascade: true })
   lastEditor: User;
 
-  @Column("timestamp", { default: () => "CURRENT_TIMESTAMP"})
-  lastEditing: Date
+  @Column("timestamp", { default: () => "CURRENT_TIMESTAMP" })
+  lastEditing: Date;
+
+  readonly type = DataType.Document;
 }

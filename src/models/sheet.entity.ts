@@ -1,10 +1,9 @@
 import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { ElementEntity } from "./element.entity";
 import { Tag } from "./tag.entity";
 import { User } from "./user.entity";
 
 @Entity()
-export class Sheet extends ElementEntity {
+export class Sheet extends BaseEntity {
 
   @PrimaryGeneratedColumn()
   id: number;

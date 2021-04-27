@@ -20,7 +20,6 @@ import { FileService } from './services/file.service';
 import { ResController } from './controllers/res/res.controller';
 import { DashboardGateway } from './sockets/dashboard.gateway';
 import { ProjectController } from './controllers/project/project.controller';
-import { CacheService } from './services/cache.service';
 import { ExportService } from './services/export.service';
 
 @Module({
@@ -46,12 +45,12 @@ import { ExportService } from './services/export.service';
         Sheet,
         Tag,
       ],
-      synchronize: false,
+      synchronize: true,
       logging: ["error"],
       // logging: true,
     }),
   ],
   controllers: [UserController, ResController, ProjectController],
-  providers: [JwtService, FileService, ImageService, DashboardGateway, CacheService, ExportService],
+  providers: [JwtService, FileService, ImageService, DashboardGateway, ExportService],
 })
 export class AppModule {}
