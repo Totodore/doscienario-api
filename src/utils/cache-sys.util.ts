@@ -24,14 +24,16 @@ export class CacheUtil {
     const docEl = this.documents.find(el => el.docId == doc.docId);
     return [docEl.docId, docEl.content];
   }
-  public unregisterDoc(id: number, all = false) {
+  public async unregisterDoc(id: number, all = false) {
     if (!all) {
-      const index = this.documents.findIndex(el => el.docId == id);
-      this.documents.splice(index, 1);
+      const doc = this.documents.find(el => el.docId == id);
+      if (!doc.updated)
+        await this.Table.update(doc.docId, { content: doc.content });
+      this.documents.splice(this.documents.indexOf(doc), 1);
     } else {
       for (const doc of this.documents) {
         if (doc.parentId === id)
-          this.documents.splice(this.documents.indexOf(doc), 1);
+          await this.unregisterDoc(doc.docId);
       }
     }
     this.logger.log("Cache updated, removed", this.Table.name, id);
