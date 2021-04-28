@@ -87,6 +87,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     }
     const [lastUpdateId, content] = await docCache.registerDoc(new DocumentStore(doc.id));
     doc.content = content;
+    console.log(content);
     client.emit(Flags.SEND_DOC, new SendDocumentRes(doc, lastUpdateId, reqId));
     client.join("doc-"+doc.id.toString());
     delete doc.content;
