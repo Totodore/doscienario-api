@@ -45,7 +45,7 @@ import { ExportService } from './services/export.service';
         Sheet,
         Tag,
       ],
-      synchronize: false,
+      synchronize: process.env.NODE_ENV == "dev",
       logging: ["error"],
       // logging: true,
     }),
