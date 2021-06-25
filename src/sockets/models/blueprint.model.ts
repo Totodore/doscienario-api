@@ -30,7 +30,6 @@ export class CreateNodeReq {
     public y: number,
     public ox: number,
     public oy: number,
-    public relYOffset: number,
     public locked?: boolean
   ) { }
 }
