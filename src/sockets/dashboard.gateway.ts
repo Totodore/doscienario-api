@@ -379,9 +379,9 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
       childId: node.id,
       blueprint: new Blueprint(packet.blueprint),
       ox: packet.ox,
-      oy: packet.oy,
+      oy: packet.oy + packet.relYOffset,
       ex: packet.x,
-      ey: packet.y
+      ey: packet.y + packet.relYOffset
     }).save();
     await nodeCache.registerDoc(new DocumentStore(node.id, node.blueprint.id));
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_NODE, new CreateNodeRes(node, data.user));
