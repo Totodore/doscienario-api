@@ -1,4 +1,4 @@
-import { BaseEntity, Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Project } from "./project.entity";
 import { User } from "./user.entity";
 import { Image } from "./image.entity";
@@ -18,8 +18,8 @@ export class Document extends AppEntity {
 
   @Column({ default: 'Nouveau document'})
   title: string
-  
-  @Column("datetime", { default: () => "CURRENT_TIMESTAMP" })
+
+  @CreateDateColumn()
   createdDate: Date;
 
   @ManyToOne(() => Project, { cascade: ["insert", "recover", "update"] })
@@ -44,7 +44,7 @@ export class Document extends AppEntity {
   @ManyToOne(() => User, { cascade: true })
   lastEditor: User;
 
-  @Column("timestamp", { default: () => "CURRENT_TIMESTAMP" })
+  @UpdateDateColumn()
   lastEditing: Date;
 
   readonly type = DataType.Document;

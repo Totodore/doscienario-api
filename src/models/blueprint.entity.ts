@@ -1,6 +1,6 @@
 import { DataType } from './data-type.entity';
 import { Relationship } from './relationship.entity';
-import { BaseEntity, Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Node } from "./node.entity";
 import { Tag } from "./tag.entity";
 import { User } from "./user.entity";
@@ -25,7 +25,7 @@ export class Blueprint extends AppEntity {
   @JoinColumn()
   relationships: Relationship[];
 
-  @Column("datetime", { default: () => "CURRENT_TIMESTAMP" })
+  @CreateDateColumn()
   createdDate: Date;
 
   @Column({ nullable: true })
@@ -59,7 +59,7 @@ export class Blueprint extends AppEntity {
   @JoinColumn()
   lastEditor: User;
 
-  @Column("timestamp", { default: () => "CURRENT_TIMESTAMP"})
+  @UpdateDateColumn()
   lastEditing: Date
 
   readonly type = DataType.Blueprint;

@@ -1,4 +1,4 @@
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, RelationId } from "typeorm";
+import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, RelationId, UpdateDateColumn } from "typeorm";
 import { Project } from "./project.entity";
 import { User } from "./user.entity";
 import { Document } from "./document.entity";
@@ -19,7 +19,7 @@ export class Image extends AppEntity {
   @Column()
   width: number;
 
-  @Column("timestamp", { default: () => "CURRENT_TIMESTAMP" })
+  @UpdateDateColumn()
   uploadedDate: Date;
 
   @ManyToOne(() => User)
@@ -29,4 +29,7 @@ export class Image extends AppEntity {
   @ManyToOne(() => Project)
   @JoinColumn()
   project: Project;
+
+  @UpdateDateColumn()
+  lastEditing: Date;
 }

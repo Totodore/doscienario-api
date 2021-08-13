@@ -1,4 +1,4 @@
-import { BaseEntity, Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, RelationId } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, RelationId, UpdateDateColumn } from "typeorm";
 import { Blueprint } from "./blueprint.entity";
 import { Tag } from "./tag.entity";
 import { User } from "./user.entity";
@@ -15,7 +15,7 @@ export class Node extends BaseEntity {
   @Column({ default: 0 })
   y: number;
 
-  @Column("datetime", { default: () => "CURRENT_TIMESTAMP" })
+  @CreateDateColumn()
   createdDate: Date;
 
   @ManyToOne(() => User, { cascade: true })
@@ -24,7 +24,7 @@ export class Node extends BaseEntity {
   @ManyToOne(() => User, { cascade: true })
   lastEditor: User;
 
-  @Column("timestamp", { default: () => "CURRENT_TIMESTAMP"})
+  @UpdateDateColumn()
   lastEditing: Date
   
   @Column({ default: false })

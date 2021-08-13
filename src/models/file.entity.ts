@@ -1,4 +1,4 @@
-import { BaseEntity, Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, RelationId } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, RelationId, UpdateDateColumn } from "typeorm";
 import { AppEntity } from "./app.entity";
 import { Project } from "./project.entity";
 import { Tag } from "./tag.entity";
@@ -24,7 +24,7 @@ export class File extends AppEntity {
   @JoinColumn()
   createdBy: User;
 
-  @Column("timestamp", { default: () => "CURRENT_TIMESTAMP"})
+  @CreateDateColumn()
   createdDate: Date;
 
   @Column()
@@ -50,5 +50,8 @@ export class File extends AppEntity {
     },
   })
   tags: Tag[];
+
+  @UpdateDateColumn()
+  lastEditing: Date;
 
 }
