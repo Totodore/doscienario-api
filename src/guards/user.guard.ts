@@ -10,12 +10,14 @@ export class UserGuard implements CanActivate {
   constructor(private readonly _jwt: JwtService) { }
 
   canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
-    const req: Request = context.switchToHttp().getRequest();
-    const auth = req.headers.authorization;
-    if (this._jwt.verify(auth)) {
-      req.headers.user = this._jwt.getUserId(auth).toString();
-      return true;
+    if (context.getType() === 'http') {
+      const req: Request = context.switchToHttp().getRequest();
+      const auth = req.headers.authorization;
+      if (this._jwt.verify(auth)) {
+        req.headers.user = this._jwt.getUserId(auth).toString();
+        return true;
+      } else return false;
     }
-    return false;
+    return true;
   }
 }

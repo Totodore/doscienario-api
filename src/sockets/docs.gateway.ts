@@ -14,8 +14,11 @@ import { GetProject } from 'src/decorators/project.decorator';
 import { GetUserId } from 'src/decorators/user.decorator';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DocumentRepository } from 'src/models/document/document.repository';
+import { UserGuard } from 'src/guards/user.guard';
+import { UseGuards } from '@nestjs/common';
 
 @WebSocketGateway({ path: "/dash" })
+@UseGuards(UserGuard)
 export class DocsGateway implements OnGatewayInit {
 
   @WebSocketServer() server: Server;
@@ -73,7 +76,7 @@ export class DocsGateway implements OnGatewayInit {
     const roomLength = Object.keys(this.server.sockets.adapter.rooms["doc-" + docId].sockets).length;
     this._logger.log("Clients in doc :", roomLength);
     if (roomLength <= 1)
-      docCache.unregisterDoc(parseInt(docId));
+      docCache.unregisterDoc(docId);
     client.leave("doc-" + docId);
     this.server.to("project-" + projectId).emit(Flags.CLOSE_DOC, new CloseDocumentRes(userId, parseInt(docId)))
   }
@@ -124,7 +127,7 @@ export class DocsGateway implements OnGatewayInit {
     await this._documentRepo.removeById(+docId);
     client.broadcast.to("project-" + projectId).emit(Flags.REMOVE_DOC, docId);
     removeRoom(this.server, "doc-" + docId);
-    docCache.unregisterDoc(parseInt(docId));
+    docCache.unregisterDoc(docId);
   }
 
   @SubscribeMessage(Flags.TAG_ADD_DOC)

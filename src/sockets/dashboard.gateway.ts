@@ -12,8 +12,11 @@ import { ColorTagReq, RenameTagReq, TagAddFile, TagRemoveFile } from './models/t
 import { createQueryBuilder } from 'typeorm';
 import { GetUserId } from 'src/decorators/user.decorator';
 import { GetProject } from 'src/decorators/project.decorator';
+import { UseGuards } from '@nestjs/common';
+import { UserGuard } from 'src/guards/user.guard';
 
 @WebSocketGateway({ path: "/dash" })
+@UseGuards(UserGuard)
 export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
 
   @WebSocketServer() server: Server;
