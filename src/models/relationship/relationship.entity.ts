@@ -1,7 +1,7 @@
-import { Blueprint } from './blueprint.entity';
+import { Blueprint } from '../blueprint/blueprint.entity';
 import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, RelationId } from "typeorm";
-import { AppEntity } from "./app.entity";
-import { Node } from "./node.entity";
+import { AppEntity } from "../app.entity";
+import { Node } from "../node/node.entity";
 
 @Entity()
 export class Relationship extends AppEntity {

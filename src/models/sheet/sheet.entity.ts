@@ -1,6 +1,6 @@
 import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { Tag } from "./tag.entity";
-import { User } from "./user.entity";
+import { Tag } from "../tag/tag.entity";
+import { User } from "../user/user.entity";
 
 @Entity()
 export class Sheet extends BaseEntity {

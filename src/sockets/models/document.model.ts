@@ -1,5 +1,5 @@
-import { Tag } from 'src/models/tag.entity';
-import { Document } from 'src/models/document.entity';
+import { Tag } from 'src/models/tag/tag.entity';
+import { Document } from 'src/models/document/document.entity';
 export class OpenDocumentRes {
   constructor(
     public userId: string,

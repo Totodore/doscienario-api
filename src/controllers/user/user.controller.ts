@@ -1,7 +1,7 @@
 import { BadRequestException, Body, Controller, ForbiddenException, Get, Patch, Post, UseGuards } from '@nestjs/common';
 import { GetUser, GetUserId } from 'src/decorators/user.decorator';
 import { UserGuard } from 'src/guards/user.guard';
-import { User } from 'src/models/user.entity';
+import { User } from 'src/models/user/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';
 import { JwtService } from 'src/services/jwt.service';
 import { UserAuthDto } from './user-auth.dto';

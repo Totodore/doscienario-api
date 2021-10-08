@@ -1,14 +1,15 @@
 import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { Project } from "./project.entity";
-import { User } from "./user.entity";
-import { Image } from "./image.entity";
-import { Tag } from "./tag.entity";
-import { AppEntity } from "./app.entity";
+import { Project } from "../project/project.entity";
+import { User } from "../user/user.entity";
+import { Image } from "../image/image.entity";
+import { Tag } from "../tag/tag.entity";
+import { AppEntity } from "../app.entity";
 import { Exclude } from "class-transformer";
-import { DataType } from "./data-type.entity";
+import { DataType } from "../data-type.entity";
+import { ElementEntity } from "../element/element.entity";
 
 @Entity()
-export class Document extends AppEntity {
+export class Document extends AppEntity implements ElementEntity {
 
   @PrimaryGeneratedColumn()
   id: number;

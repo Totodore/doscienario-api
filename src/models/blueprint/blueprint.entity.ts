@@ -1,21 +1,21 @@
-import { DataType } from './data-type.entity';
-import { Relationship } from './relationship.entity';
+import { DataType } from '../data-type.entity';
+import { Relationship } from '../relationship/relationship.entity';
 import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { Node } from "./node.entity";
-import { Tag } from "./tag.entity";
-import { User } from "./user.entity";
-import { Project } from "./project.entity";
-import { AppEntity } from "./app.entity";
-import { CONNREFUSED } from 'node:dns';
+import { Node } from "../node/node.entity";
+import { Tag } from "../tag/tag.entity";
+import { User } from "../user/user.entity";
+import { Project } from "../project/project.entity";
+import { AppEntity } from "../app.entity";
+import { ElementEntity } from '../element/element.entity';
 
 @Entity()
-export class Blueprint extends AppEntity {
+export class Blueprint extends AppEntity implements ElementEntity {
 
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ default: 'Nouvel arbre'})
-  name: string;
+  title: string;
 
   @OneToMany(() => Node, node => node.blueprint, { cascade: true })
   @JoinColumn()

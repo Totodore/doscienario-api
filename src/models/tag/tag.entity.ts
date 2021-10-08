@@ -1,12 +1,12 @@
-import { Blueprint } from './blueprint.entity';
-import { File } from './file.entity';
+import { Blueprint } from '../blueprint/blueprint.entity';
+import { File } from '../file/file.entity';
 import { BaseEntity, Column, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn, RelationId } from "typeorm";
-import { AppEntity } from "./app.entity";
-import { Project } from "./project.entity";
-import { User } from "./user.entity";
-import { Document } from "./document.entity";
-import { Node } from "./node.entity";
-import { DataType } from './data-type.entity';
+import { AppEntity } from "../app.entity";
+import { Project } from "../project/project.entity";
+import { User } from "../user/user.entity";
+import { Document } from "../document/document.entity";
+import { Node } from "../node/node.entity";
+import { DataType } from '../data-type.entity';
 @Entity()
 export class Tag extends AppEntity {
 
@@ -14,7 +14,7 @@ export class Tag extends AppEntity {
   id: number;
 
   @PrimaryColumn({ unique: true })
-  name: string;
+  title: string;
 
   @Column({ default: false })
   primary: boolean;

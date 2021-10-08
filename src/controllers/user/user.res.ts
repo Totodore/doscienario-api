@@ -1,5 +1,5 @@
-import { Project } from "src/models/project.entity";
-import { User } from "src/models/user.entity";
+import { Project } from "src/models/project/project.entity";
+import { User } from "src/models/user/user.entity";
 
 export class UserRes {
 

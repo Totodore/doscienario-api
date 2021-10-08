@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
-import { User } from 'src/models/user.entity';
+import { User } from 'src/models/user/user.entity';
 import { JwtService } from 'src/services/jwt.service';
 
 @Injectable()

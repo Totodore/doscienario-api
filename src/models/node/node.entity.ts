@@ -1,7 +1,7 @@
 import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, RelationId, UpdateDateColumn } from "typeorm";
-import { Blueprint } from "./blueprint.entity";
-import { Tag } from "./tag.entity";
-import { User } from "./user.entity";
+import { Blueprint } from "../blueprint/blueprint.entity";
+import { Tag } from "../tag/tag.entity";
+import { User } from "../user/user.entity";
 
 @Entity()
 export class Node extends BaseEntity {

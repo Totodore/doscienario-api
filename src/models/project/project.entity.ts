@@ -1,11 +1,11 @@
-import { Image } from './image.entity';
+import { Image } from '../image/image.entity';
 import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-import { User } from "./user.entity";
-import { Document } from "./document.entity";
-import { Blueprint } from "./blueprint.entity";
-import { Tag } from "./tag.entity";
-import { AppEntity } from "./app.entity";
-import { File } from "./file.entity";
+import { User } from "../user/user.entity";
+import { Document } from "../document/document.entity";
+import { Blueprint } from "../blueprint/blueprint.entity";
+import { Tag } from "../tag/tag.entity";
+import { AppEntity } from "../app.entity";
+import { File } from "../file/file.entity";
 
 @Entity()
 export class Project extends AppEntity {

@@ -1,7 +1,7 @@
-import { Node } from './../../models/node.entity';
-import { Relationship } from './../../models/relationship.entity';
-import { User } from './../../models/user.entity';
-import { Blueprint } from 'src/models/blueprint.entity';
+import { Node } from '../../models/node/node.entity';
+import { Relationship } from '../../models/relationship/relationship.entity';
+import { User } from '../../models/user/user.entity';
+import { Blueprint } from 'src/models/blueprint/blueprint.entity';
 import { Change } from './document.model';
 export class SendBlueprintRes {
   constructor(

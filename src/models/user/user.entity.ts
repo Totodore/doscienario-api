@@ -1,7 +1,7 @@
 import { Exclude } from "class-transformer";
 import { BaseEntity, Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { AppEntity } from "./app.entity";
-import { Project } from "./project.entity";
+import { AppEntity } from "../app.entity";
+import { Project } from "../project/project.entity";
 
 @Entity()
 export class User extends AppEntity {

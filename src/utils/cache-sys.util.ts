@@ -1,5 +1,5 @@
-import { Node } from './../models/node.entity';
-import { Document } from './../models/document.entity';
+import { Node } from '../models/node/node.entity';
+import { Document } from '../models/document/document.entity';
 import { AppLogger } from './../utils/app-logger.util';
 import { Change, DocumentStore, WriteDocumentReq } from 'src/sockets/models/document.model';
 import { WriteNodeContentIn } from 'src/sockets/models/blueprint.model';
