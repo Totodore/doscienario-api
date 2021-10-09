@@ -1,18 +1,15 @@
-import { ConnectedSocket, MessageBody, OnGatewayConnection, SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayInit } from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayInit } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Document } from 'src/models/document/document.entity';
-import { Project } from 'src/models/project/project.entity';
-import { Tag } from 'src/models/tag/tag.entity';
 import { User } from 'src/models/user/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';
 import { removeRoom } from 'src/utils/socket.util';
 import { Flags } from './flags.enum';
 import { AddTagDocumentReq, AddTagDocumentRes, CloseDocumentRes, CursorDocumentReq, CursorDocumentRes, DocumentStore, OpenDocumentRes, RemoveTagDocumentReq, WriteDocumentReq, WriteDocumentRes, SendDocumentRes, RenameDocumentReq } from './models/document.model';
-import { createQueryBuilder, getCustomRepository, getRepository } from 'typeorm';
+import { getCustomRepository } from 'typeorm';
 import { docCache } from 'src/main';
 import { GetProject } from 'src/decorators/project.decorator';
 import { GetUserId } from 'src/decorators/user.decorator';
-import { InjectRepository } from '@nestjs/typeorm';
 import { DocumentRepository } from 'src/models/document/document.repository';
 import { UserGuard } from 'src/guards/user.guard';
 import { UseGuards } from '@nestjs/common';
@@ -76,7 +73,7 @@ export class DocsGateway implements OnGatewayInit {
   public closeDoc(@ConnectedSocket() client: Socket, @MessageBody() docId: number, @GetUserId() userId: string, @GetProject() projectId: string) {
 
     this._logger.log("Client closed doc", docId);
-    const roomLength = Object.keys(this.server.sockets.adapter.rooms["doc-" + docId].sockets).length;
+    const roomLength = Object.keys(this.server.sockets.adapter.rooms["doc-" + docId]?.sockets)?.length || 0;
     this._logger.log("Clients in doc :", roomLength);
     if (roomLength <= 1)
       docCache.unregisterDoc(docId);
@@ -134,10 +131,10 @@ export class DocsGateway implements OnGatewayInit {
   }
 
   @SubscribeMessage(Flags.TAG_ADD_DOC)
-  public async addTagDoc(@ConnectedSocket() client: Socket, @MessageBody() body: AddTagDocumentReq, @GetUserId() userId: string, @GetProject() projectId: string) {
+  public async addTagDoc(@ConnectedSocket() client: Socket, @MessageBody() body: AddTagDocumentReq, @GetUserId() userId: string, @GetProject() projectId: number) {
     this._logger.log("Client add tag to doc", body.docId, body.title);
 
-    const { tag } = await this._documentRepo.addTag(body.docId, body.title, +projectId, userId);
+    const { tag } = await this._documentRepo.addTag(body.docId, body.title, projectId, userId);
     client.broadcast.to("project-" + projectId).emit(Flags.TAG_ADD_DOC, new AddTagDocumentRes(body.docId, tag));
   }
 

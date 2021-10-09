@@ -18,15 +18,13 @@ export abstract class ElementRepository<T extends IElementEntity> extends AppRep
       project: new Project(projectId),
       createdBy: new User(userId)
     });
-    el.tags.push(tag);
-    await el.save();
+    await this.createQueryBuilder().relation("tags").of(el).add(tag);
     return { el, tag };
   }
 
   public async removeTag(id: number, title: string) {
     const el = await this.findOne(id, { relations: ["tags"] });
-    el.tags.splice(el.tags.findIndex(t => t.title === title), 1);
-    return await el.save();
+    await this.createQueryBuilder().relation("tags").of(el).remove(await Tag.findOne({ where: { title } }));
   }
 
 }
