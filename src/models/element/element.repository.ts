@@ -1,11 +1,11 @@
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
 import { AppRepository } from "../app.repository";
-import { ElementEntity } from "./element.entity";
+import { ElementEntity, IElementEntity } from "./element.entity";
 import { Project } from "../project/project.entity";
 import { Tag } from "../tag/tag.entity";
 import { User } from "../user/user.entity";
 
-export abstract class ElementRepository<T extends ElementEntity> extends AppRepository<T> {
+export abstract class ElementRepository<T extends IElementEntity> extends AppRepository<T> {
 
   public async rename(id: number, title: string) {
     return super.update(id, { title: () => title });

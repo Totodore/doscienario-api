@@ -53,12 +53,18 @@ export class ProjectController {
 
   @Get("/:id")
   async getProject(@Param("id") id: number, @GetUser({ joinProjects: true }) user: User): Promise<Project> {
-    const project = await Project.findOne(id, { relations: ["users", "createdBy", "tags"] });
-    const docs = await Document.find({ where: { project }, relations: ["tags", "lastEditor"] });
-    const blueprints = await Blueprint.find({ where: { project }, relations: ["tags", "lastEditor"] });
-    project.documents = docs;
-    project.blueprints = blueprints;
-    return project;
+    return createQueryBuilder(Project, 'project')
+      .where('project.id = :id', { id, user })
+      .leftJoinAndSelect('project.users', 'user')
+      .leftJoinAndSelect('project.createdBy', 'createdBy')
+      .leftJoinAndSelect('project.tags', 'tag')
+      .leftJoinAndSelect('project.documents', 'documents')
+      .leftJoinAndSelect('documents.tags', 'documentTag')
+      .leftJoinAndSelect('documents.lastEditor', 'documentLastEditor')
+      .leftJoinAndSelect('project.blueprints', 'blueprints')
+      .leftJoinAndSelect('blueprints.tags', 'blueprintTag')
+      .leftJoinAndSelect('blueprints.lastEditor', 'blueprintLastEditor')
+      .getOne();
   }
 
   @Delete("/:id")

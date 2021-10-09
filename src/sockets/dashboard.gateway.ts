@@ -14,6 +14,7 @@ import { GetUserId } from 'src/decorators/user.decorator';
 import { GetProject } from 'src/decorators/project.decorator';
 import { UseGuards } from '@nestjs/common';
 import { UserGuard } from 'src/guards/user.guard';
+import { SocketService } from 'src/services/socket.service';
 
 @WebSocketGateway({ path: "/dash" })
 @UseGuards(UserGuard)
@@ -21,9 +22,9 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @WebSocketServer() server: Server;
 
-  private users: Map<string, string> = new Map();
   constructor(
     private readonly _logger: AppLogger,
+    private readonly _socketService: SocketService,
   ) { }
 
   public afterInit() {
@@ -32,7 +33,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   public handleConnection(@ConnectedSocket() client: Socket, @GetUserId() userId: string, @GetProject() projectId: string) {
     this._logger.log("New client connected ", userId, projectId);
-    this.users.set(client.id, userId);
+    this._socketService.sockets.set(client.id, userId);
     client.join("project-"+projectId);
     this.server.to("project-"+projectId).emit(Flags.OPEN_PROJECT, userId);
   }
@@ -41,7 +42,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     const userId = client.handshake.headers.user;
     const projectId = client.handshake.query.project;
     this._logger.log("Client disconnect", userId, projectId);
-    this.users.delete(client.id);
+    this._socketService.sockets.delete(client.id);
     this.server.to("project-"+projectId).emit(Flags.CLOSE_PROJECT, userId);
   }
 

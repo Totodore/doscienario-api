@@ -40,7 +40,7 @@ export class TreeGateway implements OnGatewayInit {
   }
 
   @SubscribeMessage(Flags.OPEN_BLUEPRINT)
-  public async openBlueprint(@ConnectedSocket() client: Socket, @MessageBody() [reqId, docId]: [string, number?], @GetProject() projectId: string, @GetUserId() userId: string) {
+  public async openBlueprint(@ConnectedSocket() client: Socket, @MessageBody() [reqId, docId]: [string, number?], @GetProject() projectId: number, @GetUserId() userId: string) {
     let blueprint: Blueprint;
     if (docId) {
       this._logger.log("Client opened blueprint", docId);
@@ -48,13 +48,14 @@ export class TreeGateway implements OnGatewayInit {
     } else {
       this._logger.log("Client created blueprint");
       blueprint = await this._blueprintRepo.post({
-        project: new Project(projectId),
+        projectId,
+        title: "Nouvel arbre",
         lastEditor: new User(userId),
         createdBy: new User(userId),
       });
     }
     for (const node of blueprint.nodes)
-      node.content = (await nodeCache.registerDoc(new DocumentStore(node.id+"", blueprint.id+"")))[1];
+      node.content = (await nodeCache.registerDoc(new DocumentStore(node.id, blueprint.id)))[1];
 
     client.emit(Flags.SEND_BLUEPRINT, new SendBlueprintRes(blueprint, reqId));
     client.join("blueprint-" + blueprint.id.toString());
@@ -66,7 +67,7 @@ export class TreeGateway implements OnGatewayInit {
     this._logger.log("Client closed blueprint", docId);
     const roomLength = Object.keys(this.server.sockets.adapter.rooms["blueprint-" + docId].sockets).length;
     if (roomLength <= 1)
-      nodeCache.unregisterDoc(docId+"", true);
+      nodeCache.unregisterDoc(docId, true);
     client.leave("blueprint-" + docId);
     this.server.to("project-" + projectId.toString()).emit(Flags.CLOSE_BLUEPRINT, new CloseBlueprintRes(userId, docId));
   }
@@ -77,7 +78,7 @@ export class TreeGateway implements OnGatewayInit {
     await this._blueprintRepo.removeById(docId);
     client.broadcast.to("project-" + projectId.toString()).emit(Flags.REMOVE_BLUEPRINT, docId);
     removeRoom(this.server, "blueprint-" + docId);
-    nodeCache.unregisterDoc(docId+"", true);
+    nodeCache.unregisterDoc(docId, true);
   }
 
   @SubscribeMessage(Flags.RENAME_BLUEPRINT)
@@ -108,7 +109,7 @@ export class TreeGateway implements OnGatewayInit {
       ex: packet.x,
       ey: packet.y + packet.relYOffset
     });
-    await nodeCache.registerDoc(new DocumentStore(node.id+"", node.blueprint.id+""));
+    await nodeCache.registerDoc(new DocumentStore(node.id, node.blueprint.id));
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_NODE, new CreateNodeRes(node, userId));
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_RELATION, new CreateRelationRes(packet.blueprint, rel));
   }
@@ -131,7 +132,7 @@ export class TreeGateway implements OnGatewayInit {
     this._logger.log("Remove node for", packet.nodeId);
     await this._nodeRepo.removeById(packet.nodeId);
     client.broadcast.to("blueprint-" + packet.blueprintId).emit(Flags.REMOVE_NODE, packet);
-    nodeCache.unregisterDoc(packet.nodeId+"");
+    nodeCache.unregisterDoc(packet.nodeId);
   }
 
   @SubscribeMessage(Flags.CREATE_RELATION)

@@ -16,6 +16,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DocumentRepository } from 'src/models/document/document.repository';
 import { UserGuard } from 'src/guards/user.guard';
 import { UseGuards } from '@nestjs/common';
+import { SocketService } from 'src/services/socket.service';
 
 @WebSocketGateway({ path: "/dash" })
 @UseGuards(UserGuard)
@@ -23,11 +24,11 @@ export class DocsGateway implements OnGatewayInit {
 
   @WebSocketServer() server: Server;
 
-  private users: Map<string, string> = new Map();
   private _documentRepo: DocumentRepository;
 
   constructor(
     private readonly _logger: AppLogger,
+    private readonly _socketService: SocketService,
   ) { }
 
   public afterInit(_server: Server) {
@@ -43,7 +44,7 @@ export class DocsGateway implements OnGatewayInit {
    * Send the content of the document to the user
    */
   @SubscribeMessage(Flags.OPEN_DOC)
-  public async openDoc(@ConnectedSocket() client: Socket, @MessageBody() [reqId, docId]: [string, number?], @GetUserId() userId: string, @GetProject() projectId: string) {
+  public async openDoc(@ConnectedSocket() client: Socket, @MessageBody() [reqId, docId]: [string, number?], @GetUserId() userId: string, @GetProject() projectId: number) {
     let doc: Document;
     if (docId) {
       this._logger.log("Client opened doc", docId);
@@ -51,7 +52,8 @@ export class DocsGateway implements OnGatewayInit {
     } else {
       this._logger.log("Client created doc");
       doc = await this._documentRepo.post({
-        project: new Project(projectId),
+        projectId,
+        title: "Nouveau document",
         lastEditor: new User(userId),
         createdBy: new User(userId),
       });
@@ -70,7 +72,7 @@ export class DocsGateway implements OnGatewayInit {
    * If there everyone has closed the room then the cache is cleared
    */
   @SubscribeMessage(Flags.CLOSE_DOC)
-  public closeDoc(@ConnectedSocket() client: Socket, @MessageBody() docId: string, @GetUserId() userId: string, @GetProject() projectId: string) {
+  public closeDoc(@ConnectedSocket() client: Socket, @MessageBody() docId: number, @GetUserId() userId: string, @GetProject() projectId: string) {
 
     this._logger.log("Client closed doc", docId);
     const roomLength = Object.keys(this.server.sockets.adapter.rooms["doc-" + docId].sockets).length;
@@ -78,7 +80,7 @@ export class DocsGateway implements OnGatewayInit {
     if (roomLength <= 1)
       docCache.unregisterDoc(docId);
     client.leave("doc-" + docId);
-    this.server.to("project-" + projectId).emit(Flags.CLOSE_DOC, new CloseDocumentRes(userId, parseInt(docId)))
+    this.server.to("project-" + projectId).emit(Flags.CLOSE_DOC, new CloseDocumentRes(userId, docId));
   }
 
   /**
@@ -100,7 +102,7 @@ export class DocsGateway implements OnGatewayInit {
         userId,
         updateId,
         changes,
-        userUpdates.get(this.users.get(client.id)) || 0
+        userUpdates.get(this._socketService.sockets.get(client.id)) || 0
       ));
     }
   }
@@ -122,9 +124,9 @@ export class DocsGateway implements OnGatewayInit {
   }
 
   @SubscribeMessage(Flags.REMOVE_DOC)
-  public async removeDoc(@ConnectedSocket() client: Socket, @MessageBody() docId: string, @GetProject() projectId: string) {
+  public async removeDoc(@ConnectedSocket() client: Socket, @MessageBody() docId: number, @GetProject() projectId: string) {
     this._logger.log("Client remove doc", docId);
-    await this._documentRepo.removeById(+docId);
+    await this._documentRepo.removeById(docId);
     client.broadcast.to("project-" + projectId).emit(Flags.REMOVE_DOC, docId);
     removeRoom(this.server, "doc-" + docId);
     docCache.unregisterDoc(docId);

@@ -1,34 +1,13 @@
-import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { Project } from "../project/project.entity";
-import { User } from "../user/user.entity";
-import { Image } from "../image/image.entity";
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, UpdateDateColumn } from "typeorm";
 import { Tag } from "../tag/tag.entity";
-import { AppEntity } from "../app.entity";
-import { Exclude } from "class-transformer";
 import { DataType } from "../data-type.entity";
-import { ElementEntity } from "../element/element.entity";
+import { ElementEntity, IElementEntity } from "../element/element.entity";
 
 @Entity()
-export class Document extends AppEntity implements ElementEntity {
-
-  @PrimaryGeneratedColumn()
-  id: number;
+export class Document extends ElementEntity implements IElementEntity {
 
   @Column("text", { select: false, nullable: true })
   content: string;
-
-  @Column({ default: 'Nouveau document'})
-  title: string
-
-  @CreateDateColumn()
-  createdDate: Date;
-
-  @ManyToOne(() => Project, { cascade: ["insert", "recover", "update"] })
-  @JoinColumn()
-  project: Project;
-
-  @ManyToOne(() => User, { cascade: true })
-  createdBy: User;
 
   @ManyToMany(() => Tag, tag => tag.documents, { cascade: ["insert", "recover", "update"] })
   @JoinTable({
@@ -41,12 +20,6 @@ export class Document extends AppEntity implements ElementEntity {
     },
   })
   tags: Tag[];
-
-  @ManyToOne(() => User, { cascade: true })
-  lastEditor: User;
-
-  @UpdateDateColumn()
-  lastEditing: Date;
 
   readonly type = DataType.Document;
 }

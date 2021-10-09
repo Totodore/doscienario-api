@@ -5,17 +5,10 @@ import { Node } from "../node/node.entity";
 import { Tag } from "../tag/tag.entity";
 import { User } from "../user/user.entity";
 import { Project } from "../project/project.entity";
-import { AppEntity } from "../app.entity";
-import { ElementEntity } from '../element/element.entity';
+import { ElementEntity, IElementEntity } from '../element/element.entity';
 
 @Entity()
-export class Blueprint extends AppEntity implements ElementEntity {
-
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ default: 'Nouvel arbre'})
-  title: string;
+export class Blueprint extends ElementEntity implements IElementEntity {
 
   @OneToMany(() => Node, node => node.blueprint, { cascade: true })
   @JoinColumn()
@@ -25,23 +18,11 @@ export class Blueprint extends AppEntity implements ElementEntity {
   @JoinColumn()
   relationships: Relationship[];
 
-  @CreateDateColumn()
-  createdDate: Date;
-
   @Column({ nullable: true })
   x: number;
 
   @Column({ nullable: true })
   y: number;
-
-  @ManyToOne(() => Project, { cascade: ["insert", "recover", "update"] })
-  @JoinColumn()
-  project: Project;
-
-  @ManyToOne(() => User, { cascade: true })
-  @JoinColumn()
-  createdBy: User;
-
 
   @ManyToMany(() => Tag, tag => tag.blueprints, { cascade: ["insert", "recover", "update"] })
   @JoinTable({
@@ -54,13 +35,6 @@ export class Blueprint extends AppEntity implements ElementEntity {
     },
   })
   tags: Tag[];
-
-  @ManyToOne(() => User, { cascade: true })
-  @JoinColumn()
-  lastEditor: User;
-
-  @UpdateDateColumn()
-  lastEditing: Date
 
   readonly type = DataType.Blueprint;
 }
