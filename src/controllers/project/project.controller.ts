@@ -1,5 +1,4 @@
 import { Relationship } from '../../models/relationship/relationship.entity';
-import { docCache, nodeCache } from './../../main';
 import { User } from '../../models/user/user.entity';
 import { Image } from '../../models/image/image.entity';
 import { Node } from '../../models/node/node.entity';
@@ -20,15 +19,16 @@ import * as AdmZip from "adm-zip";
 import { v4 as uuid } from "uuid";
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Blueprint } from 'src/models/blueprint/blueprint.entity';
+import { SocketService } from 'src/services/socket.service';
 @Controller('project')
 @UseGuards(UserGuard)
 export class ProjectController {
 
   constructor(
     private readonly _logger: AppLogger, 
-    private readonly _fileManager: FileService,
     private readonly _imageManager: ImageService,
     private readonly _exportManager: ExportService,
+    private readonly _socketManager: SocketService,
   ) { }
 
   @Post()
@@ -70,8 +70,7 @@ export class ProjectController {
   @Delete("/:id")
   async deleteProject(@Param("id") id: number) {
     const project = new Project(id);
-    await nodeCache.saveDocs();
-    await docCache.saveDocs();
+    await this._socketManager.docCache.saveDocs();
     for (const document of await Document.find({ project }))
       await document.remove();
     for (const blueprint of await Blueprint.find({ project })) {
@@ -87,8 +86,7 @@ export class ProjectController {
   @Get("/:id/export")
   async exportProject(@Param("id") id: number): Promise<{ id: string }> {
     this._logger.log("Exporting project", id);
-    await docCache.saveDocs();
-    await nodeCache.saveDocs();
+    await this._socketManager.docCache.saveDocs();
     const project = await Project.findOne(id, { select: ["name", "id"]});
     const docs = await Document.find({ where: { project: new Project(id) }, relations: ["tags"], select: ["content", "title", "id"] });
     const tags = await Tag.find({ where: { project }, select: ["title", "id", "color", "primary"] });

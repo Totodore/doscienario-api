@@ -80,12 +80,3 @@ export class EditSumarryIn {
     public blueprint: number
   ) {}
 }
-export class WriteNodeContentIn {
-  constructor(
-    public changes: Change[],
-    public nodeId: number,
-    public userId: string,
-    public blueprintId: number
-  ) {}
-}
-export const WriteNodeContentOut = WriteNodeContentIn;

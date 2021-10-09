@@ -7,7 +7,6 @@ import { removeRoom } from 'src/utils/socket.util';
 import { Flags } from './flags.enum';
 import { AddTagDocumentReq, AddTagDocumentRes, CloseDocumentRes, CursorDocumentReq, CursorDocumentRes, DocumentStore, OpenDocumentRes, RemoveTagDocumentReq, WriteDocumentReq, WriteDocumentRes, SendDocumentRes, RenameDocumentReq } from './models/document.model';
 import { getCustomRepository } from 'typeorm';
-import { docCache } from 'src/main';
 import { GetProject } from 'src/decorators/project.decorator';
 import { GetUserId } from 'src/decorators/user.decorator';
 import { DocumentRepository } from 'src/models/document/document.repository';
@@ -56,7 +55,7 @@ export class DocsGateway implements OnGatewayInit {
       });
       doc.tags = [];
     }
-    const [lastUpdateId, content] = await docCache.registerDoc(new DocumentStore(doc.id));
+    const [lastUpdateId, content] = await this._socketService.docCache.registerDoc(new DocumentStore(doc.id));
     doc.content = content;
     client.emit(Flags.SEND_DOC, new SendDocumentRes(doc, lastUpdateId, reqId));
     client.join("doc-" + doc.id);
@@ -73,10 +72,10 @@ export class DocsGateway implements OnGatewayInit {
   public closeDoc(@ConnectedSocket() client: Socket, @MessageBody() docId: number, @GetUserId() userId: string, @GetProject() projectId: string) {
 
     this._logger.log("Client closed doc", docId);
-    const roomLength = Object.keys(this.server.sockets.adapter.rooms["doc-" + docId]?.sockets)?.length || 0;
+    const roomLength = Object.keys(this.server.sockets.adapter.rooms["doc-" + docId]?.sockets || {}).length;
     this._logger.log("Clients in doc :", roomLength);
     if (roomLength <= 1)
-      docCache.unregisterDoc(docId);
+      this._socketService.docCache.unregisterDoc(docId);
     client.leave("doc-" + docId);
     this.server.to("project-" + projectId).emit(Flags.CLOSE_DOC, new CloseDocumentRes(userId, docId));
   }
@@ -89,10 +88,10 @@ export class DocsGateway implements OnGatewayInit {
   @SubscribeMessage(Flags.WRITE_DOC)
   public async writeDoc(@MessageBody() body: WriteDocumentReq, @GetUserId() userId: string) {
     //We set the new update for this specific user;
-    docCache.getLastUpdateDoc(body.docId).set(userId, body.clientUpdateId);
+    this._socketService.docCache.getLastUpdateDoc(body.docId).set(userId, body.clientUpdateId);
 
-    const [updateId, changes] = docCache.updateDoc(body);
-    const userUpdates = docCache.getLastUpdateDoc(body.docId);
+    const [updateId, changes] = this._socketService.docCache.updateDoc(body);
+    const userUpdates = this._socketService.docCache.getLastUpdateDoc(body.docId);
     for (const clientId of Object.keys(this.server.sockets.adapter.rooms["doc-" + body.docId].sockets)) {
       const client = this.server.sockets.connected[clientId];
       client.emit(Flags.WRITE_DOC, new WriteDocumentRes(
@@ -127,7 +126,7 @@ export class DocsGateway implements OnGatewayInit {
     await this._documentRepo.removeById(docId);
     client.broadcast.to("project-" + projectId).emit(Flags.REMOVE_DOC, docId);
     removeRoom(this.server, "doc-" + docId);
-    docCache.unregisterDoc(docId);
+    this._socketService.docCache.unregisterDoc(docId);
   }
 
   @SubscribeMessage(Flags.TAG_ADD_DOC)

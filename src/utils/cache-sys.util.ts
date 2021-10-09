@@ -1,8 +1,6 @@
-import { Node } from '../models/node/node.entity';
 import { Document } from '../models/document/document.entity';
 import { AppLogger } from './../utils/app-logger.util';
 import { Change, DocumentStore, WriteDocumentReq } from 'src/sockets/models/document.model';
-import { WriteNodeContentIn } from 'src/sockets/models/blueprint.model';
 
 export class CacheUtil {
 
@@ -10,7 +8,7 @@ export class CacheUtil {
   
   constructor(
     private readonly logger: AppLogger,
-    private readonly Table: typeof Document | typeof Node
+    private readonly Table: typeof Document
   ) {
     setInterval(() => this.saveDocs(), 1000 * 30);
   }
@@ -45,9 +43,9 @@ export class CacheUtil {
    * if there is no addition it stores from where to where there is one
    * [Sorcellerie qui gère le multi éditing]
    */
-  public updateDoc(packet: WriteDocumentReq | WriteNodeContentIn): [number, Change[]] {
+  public updateDoc(packet: WriteDocumentReq): [number, Change[]] {
     //On récupère le document
-    const doc = this.documents.find(el => el.docId == ((packet as WriteDocumentReq).docId ?? (packet as WriteNodeContentIn).nodeId));
+    const doc = this.documents.find(el => el.docId == packet.docId);
     //On part du dernier ID du packet recu jusqu'au dernière id du document, 
     // for (let updateIndex = packet.lastUpdateId + 1; updateIndex <= doc.lastId; updateIndex++) {
     //   //On récupère chaque update depuis le dernière id du packet jusqu'au dernier id actuel
@@ -99,8 +97,6 @@ export class CacheUtil {
     doc.content = content;
     doc.updated = false;
     let newId: number;
-    if (!(packet instanceof WriteNodeContentIn))
-      newId = doc.addUpdate(packet.changes, packet.clientId, packet.clientUpdateId);
     return [newId, packet.changes];
   }
 

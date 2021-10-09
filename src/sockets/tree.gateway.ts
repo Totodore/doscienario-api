@@ -1,18 +1,16 @@
 import { RelationshipRepository } from './../models/relationship/relationship.repository';
 import { NodeRepository } from './../models/node/node.repository';
 import { Relationship } from '../models/relationship/relationship.entity';
-import { SendBlueprintRes, OpenBlueprintRes, CloseBlueprintRes, CreateNodeReq, CreateNodeRes, CreateRelationRes, PlaceNodeIn, RemoveNodeIn, RenameBlueprintIn, EditSumarryIn, WriteNodeContentIn } from './models/blueprint.model';
+import { SendBlueprintRes, OpenBlueprintRes, CloseBlueprintRes, CreateNodeReq, CreateNodeRes, CreateRelationRes, PlaceNodeIn, RemoveNodeIn, RenameBlueprintIn, EditSumarryIn } from './models/blueprint.model';
 import { Blueprint } from '../models/blueprint/blueprint.entity';
 import { ConnectedSocket, MessageBody, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Project } from 'src/models/project/project.entity';
 import { User } from 'src/models/user/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';
 import { removeRoom } from 'src/utils/socket.util';
 import { Flags } from './flags.enum';
 import { AddTagDocumentReq, AddTagDocumentRes, DocumentStore, RemoveTagDocumentReq } from './models/document.model';
 import { getCustomRepository } from 'typeorm';
-import { nodeCache } from 'src/main';
 import { GetProject } from 'src/decorators/project.decorator';
 import { GetUserId } from 'src/decorators/user.decorator';
 import { BlueprintRepository } from 'src/models/blueprint/blueprint.repository';
@@ -55,8 +53,6 @@ export class TreeGateway implements OnGatewayInit {
       });
       blueprint.tags = [];
     }
-    for (const node of blueprint.nodes)
-      node.content = (await nodeCache.registerDoc(new DocumentStore(node.id, blueprint.id)))[1];
 
     client.emit(Flags.SEND_BLUEPRINT, new SendBlueprintRes(blueprint, reqId));
     client.join("blueprint-" + blueprint.id.toString());
@@ -66,9 +62,6 @@ export class TreeGateway implements OnGatewayInit {
   @SubscribeMessage(Flags.CLOSE_BLUEPRINT)
   public async closeBlueprint(@ConnectedSocket() client: Socket, @MessageBody() docId: number, @GetUserId() userId: string, @GetProject() projectId: string) {
     this._logger.log("Client closed blueprint", docId);
-    const roomLength = Object.keys(this.server.sockets.adapter.rooms["blueprint-" + docId].sockets).length;
-    if (roomLength <= 1)
-      nodeCache.unregisterDoc(docId, true);
     client.leave("blueprint-" + docId);
     this.server.to("project-" + projectId.toString()).emit(Flags.CLOSE_BLUEPRINT, new CloseBlueprintRes(userId, docId));
   }
@@ -79,7 +72,6 @@ export class TreeGateway implements OnGatewayInit {
     await this._blueprintRepo.removeById(docId);
     client.broadcast.to("project-" + projectId.toString()).emit(Flags.REMOVE_BLUEPRINT, docId);
     removeRoom(this.server, "blueprint-" + docId);
-    nodeCache.unregisterDoc(docId, true);
   }
 
   @SubscribeMessage(Flags.RENAME_BLUEPRINT)
@@ -110,7 +102,6 @@ export class TreeGateway implements OnGatewayInit {
       ex: packet.x,
       ey: packet.y + packet.relYOffset
     });
-    await nodeCache.registerDoc(new DocumentStore(node.id, node.blueprint.id));
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_NODE, new CreateNodeRes(node, userId));
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_RELATION, new CreateRelationRes(packet.blueprint, rel));
   }
@@ -133,7 +124,6 @@ export class TreeGateway implements OnGatewayInit {
     this._logger.log("Remove node for", packet.nodeId);
     await this._nodeRepo.removeById(packet.nodeId);
     client.broadcast.to("blueprint-" + packet.blueprintId).emit(Flags.REMOVE_NODE, packet);
-    nodeCache.unregisterDoc(packet.nodeId);
   }
 
   @SubscribeMessage(Flags.CREATE_RELATION)
@@ -162,11 +152,6 @@ export class TreeGateway implements OnGatewayInit {
   public async sumarryNode(@ConnectedSocket() client: Socket, @MessageBody() packet: EditSumarryIn) {
     await this._nodeRepo.updateSummaryById(packet.node, packet.content);
     client.broadcast.to("blueprint-" + packet.blueprint).emit(Flags.SUMARRY_NODE, packet);
-  }
-  @SubscribeMessage(Flags.CONTENT_NODE)
-  public async contentNode(@ConnectedSocket() client: Socket, @MessageBody() body: WriteNodeContentIn) {
-    nodeCache.updateDoc(body);
-    client.broadcast.to("blueprint-" + body.blueprintId.toString()).emit(Flags.CONTENT_NODE, body);
   }
 
 }

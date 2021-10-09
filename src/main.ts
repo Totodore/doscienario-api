@@ -28,6 +28,3 @@ async function bootstrap() {
   await app.listen(parseInt(process.env.PORT ?? "3000"));
 }
 bootstrap();
-
-export const nodeCache = new CacheUtil(new AppLogger(), Node);
-export const docCache = new CacheUtil(new AppLogger(), Document);
