@@ -48,11 +48,12 @@ export class TreeGateway implements OnGatewayInit {
     } else {
       this._logger.log("Client created blueprint");
       blueprint = await this._blueprintRepo.post({
-        projectId,
         title: "Nouvel arbre",
+        projectId,
         lastEditor: new User(userId),
         createdBy: new User(userId),
       });
+      blueprint.tags = [];
     }
     for (const node of blueprint.nodes)
       node.content = (await nodeCache.registerDoc(new DocumentStore(node.id, blueprint.id)))[1];
@@ -144,16 +145,16 @@ export class TreeGateway implements OnGatewayInit {
 
   @SubscribeMessage(Flags.TAG_ADD_BLUEPRINT)
   public async addTagBlueprint(@ConnectedSocket() client: Socket, @MessageBody() body: AddTagDocumentReq, @GetUserId() userId: string, @GetProject() projectId: string) {
-    this._logger.log("Client add tag to blueprint", body.docId, body.name);
+    this._logger.log("Client add tag to blueprint", body.docId, body.title);
 
-    const { tag } = await this._blueprintRepo.addTag(body.docId, body.name, +projectId, userId);
+    const { tag } = await this._blueprintRepo.addTag(body.docId, body.title, +projectId, userId);
     client.broadcast.to("project-" + projectId.toString()).emit(Flags.TAG_ADD_BLUEPRINT, new AddTagDocumentRes(body.docId, tag));
   }
 
   @SubscribeMessage(Flags.TAG_REMOVE_BLUEPRINT)
   public async removeTagBlueprint(@ConnectedSocket() client: Socket, @MessageBody() body: RemoveTagDocumentReq, @GetUserId() userId: string, @GetProject() projectId: string) {
-    this._logger.log("Client removed tag to blueprint", body.docId, body.name);
-    await this._blueprintRepo.removeTag(body.docId, body.name);
+    this._logger.log("Client removed tag to blueprint", body.docId, body.title);
+    await this._blueprintRepo.removeTag(body.docId, body.title);
     client.broadcast.to("project-" + projectId.toString()).emit(Flags.TAG_REMOVE_BLUEPRINT, body);
   }
 

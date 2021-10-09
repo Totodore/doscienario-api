@@ -85,7 +85,7 @@ export class CursorDocumentRes {
 export class AddTagDocumentReq {
   constructor(
     public docId: number,
-    public name: string,
+    public title: string,
   ) {}
 }
 export class RemoveTagDocumentReq extends AddTagDocumentReq { };

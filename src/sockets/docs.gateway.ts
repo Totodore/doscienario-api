@@ -52,11 +52,12 @@ export class DocsGateway implements OnGatewayInit {
     } else {
       this._logger.log("Client created doc");
       doc = await this._documentRepo.post({
-        projectId,
         title: "Nouveau document",
+        projectId,
         lastEditor: new User(userId),
         createdBy: new User(userId),
       });
+      doc.tags = [];
     }
     const [lastUpdateId, content] = await docCache.registerDoc(new DocumentStore(doc.id));
     doc.content = content;
@@ -134,16 +135,16 @@ export class DocsGateway implements OnGatewayInit {
 
   @SubscribeMessage(Flags.TAG_ADD_DOC)
   public async addTagDoc(@ConnectedSocket() client: Socket, @MessageBody() body: AddTagDocumentReq, @GetUserId() userId: string, @GetProject() projectId: string) {
-    this._logger.log("Client add tag to doc", body.docId, body.name);
+    this._logger.log("Client add tag to doc", body.docId, body.title);
 
-    const { tag } = await this._documentRepo.addTag(body.docId, body.name, +projectId, userId);
+    const { tag } = await this._documentRepo.addTag(body.docId, body.title, +projectId, userId);
     client.broadcast.to("project-" + projectId).emit(Flags.TAG_ADD_DOC, new AddTagDocumentRes(body.docId, tag));
   }
 
   @SubscribeMessage(Flags.TAG_REMOVE_DOC)
   public async removeTagDoc(@ConnectedSocket() client: Socket, @MessageBody() body: RemoveTagDocumentReq, @GetProject() projectId: string) {
-    this._logger.log("Client removed tag to doc", body.docId, body.name);
-    await this._documentRepo.removeTag(body.docId, body.name);
+    this._logger.log("Client removed tag to doc", body.docId, body.title);
+    await this._documentRepo.removeTag(body.docId, body.title);
     client.broadcast.to("project-" + projectId).emit(Flags.TAG_REMOVE_DOC, body);
   }
 

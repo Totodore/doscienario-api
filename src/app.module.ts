@@ -52,10 +52,9 @@ import { SocketService } from './services/socket.service';
         Sheet,
         Tag,
       ],
-      
       synchronize: process.env.NODE_ENV == "dev",
-      logging: ["error"],
-      // logging: true,
+      // logging: ["error"],
+      logging: true,
     }),
   ],
   controllers: [UserController, ResController, ProjectController],

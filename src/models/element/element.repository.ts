@@ -8,7 +8,7 @@ import { User } from "../user/user.entity";
 export abstract class ElementRepository<T extends IElementEntity> extends AppRepository<T> {
 
   public async rename(id: number, title: string) {
-    return super.update(id, { title: () => title });
+    return super.update(id, { title: () => `'${title}'` });
   }
 
   public async addTag(id: number, title: string, projectId: number, userId: string) {

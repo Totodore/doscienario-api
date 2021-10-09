@@ -21,10 +21,10 @@ export abstract class ElementEntity extends AppEntity {
   lastEditing: Date;
 
   @ManyToOne(() => Project, { cascade: ["insert", "recover", "update"] })
-  @JoinColumn()
+  @JoinColumn({ name: 'projectId' })
   project: Project;
 
-  @RelationId((element: ElementEntity) => element.project)
+  @Column()
   projectId: number;
 
   @ManyToOne(() => User, { cascade: true })
