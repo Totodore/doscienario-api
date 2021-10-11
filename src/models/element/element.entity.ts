@@ -14,6 +14,9 @@ export abstract class ElementEntity extends AppEntity {
   @Column("uuid", { unique: true })
   uid: string;
 
+  @Column("varchar", { length: 6, nullable: true })
+  color?: string;
+
   @CreateDateColumn()
   createdDate: Date;
 
