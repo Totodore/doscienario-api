@@ -18,6 +18,7 @@ export class DocumentRepository extends ElementRepository<Document> {
       "lastEditing",
       'lastEditor',
       'title',
+      "color"
       // 'tags'
     ]);
   }

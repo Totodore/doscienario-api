@@ -11,6 +11,10 @@ export abstract class ElementRepository<T extends IElementEntity> extends AppRep
     return super.update(id, { title: () => `'${title}'` });
   }
 
+  public async updateColor(id: number, color: string) {
+    return super.update(id, { color: () => `'${color}'` });
+  }
+
   public async addTag(id: number, title: string, projectId: number, userId: string) {
     let el = await this.findOne(id, { relations: ["tags"] });
     let tag = await Tag.findOneOrCreate<Tag>({ where: { title } }, {

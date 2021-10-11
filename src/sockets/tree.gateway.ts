@@ -16,6 +16,7 @@ import { GetUserId } from 'src/decorators/user.decorator';
 import { BlueprintRepository } from 'src/models/blueprint/blueprint.repository';
 import { UserGuard } from 'src/guards/user.guard';
 import { UseGuards } from '@nestjs/common';
+import { ColorElementReq } from './models/element.model';
 
 @WebSocketGateway({ path: "/dash" })
 @UseGuards(UserGuard)
@@ -80,6 +81,13 @@ export class TreeGateway implements OnGatewayInit {
       packet.title = "Nouveau document";
     client.broadcast.to("project-" + projectId.toString()).emit(Flags.RENAME_BLUEPRINT, packet);
     await this._blueprintRepo.rename(packet.id, packet.title);
+  }
+
+  @SubscribeMessage(Flags.COLOR_BLUEPRINT)
+  public async colorDoc(@ConnectedSocket() client: Socket, @MessageBody() body: ColorElementReq, @GetProject() projectId: string) {
+    this._logger.log("Client color doc", body.docId);
+    await this._blueprintRepo.updateColor(body.docId, body.color);
+    client.broadcast.to("project-" + projectId).emit(Flags.COLOR_BLUEPRINT, body);
   }
 
   @SubscribeMessage(Flags.CREATE_NODE)

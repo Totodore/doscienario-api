@@ -13,6 +13,7 @@ import { DocumentRepository } from 'src/models/document/document.repository';
 import { UserGuard } from 'src/guards/user.guard';
 import { UseGuards } from '@nestjs/common';
 import { SocketService } from 'src/services/socket.service';
+import { ColorElementReq } from './models/element.model';
 
 @WebSocketGateway({ path: "/dash" })
 @UseGuards(UserGuard)
@@ -129,6 +130,13 @@ export class DocsGateway implements OnGatewayInit {
     client.broadcast.to("project-" + projectId).emit(Flags.REMOVE_DOC, docId);
     removeRoom(this.server, "doc-" + docId);
     this._socketService.docCache.unregisterDoc(docId);
+  }
+
+  @SubscribeMessage(Flags.COLOR_DOC)
+  public async colorDoc(@ConnectedSocket() client: Socket, @MessageBody() body: ColorElementReq, @GetProject() projectId: string) {
+    this._logger.log("Client color doc", body.docId);
+    await this._documentRepo.updateColor(body.docId, body.color);
+    client.broadcast.to("project-" + projectId).emit(Flags.COLOR_DOC, body);
   }
 
   @SubscribeMessage(Flags.TAG_ADD_DOC)
