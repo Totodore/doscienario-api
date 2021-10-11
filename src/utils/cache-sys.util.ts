@@ -25,6 +25,7 @@ export class CacheUtil {
   public async unregisterDoc(id: number, all = false) {
     if (!all) {
       const doc = this.documents.find(el => el.docId == id);
+      if (!doc) return;
       if (!doc.updated)
         await this.Table.update(doc.docId, { content: doc.content });
       this.documents.splice(this.documents.indexOf(doc), 1);

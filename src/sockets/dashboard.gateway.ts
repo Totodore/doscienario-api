@@ -50,7 +50,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   public async createTag(@MessageBody() tag: Tag, @GetUserId() userId: string, @GetProject() projectId: string) {
     this._logger.log("Client create tag", tag);
 
-    if (await Tag.exists<Tag>({ where: { project: new Project(projectId), name: tag.title.toLowerCase() } }))
+    if (await Tag.exists<Tag>({ where: { project: new Project(projectId), title: tag.title.toLowerCase() } }))
       throw new WsException("Tag already exist");
 
     tag = await Tag.create({ createdBy: new User(userId), project: new Project(projectId), ...tag, color: tag.color }).save();
@@ -60,7 +60,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   @SubscribeMessage(Flags.REMOVE_TAG)
   public async removeTag(@ConnectedSocket() client: Socket, @MessageBody() tagName: string, @GetProject() projectId: string) {
     this._logger.log("Client remove tag");
-    await (await Tag.findOne({ where: { name: tagName } })).remove();
+    await (await Tag.findOne({ where: { title: tagName } })).remove();
     client.broadcast.to("project-"+projectId).emit(Flags.REMOVE_TAG, tagName);
   }
 

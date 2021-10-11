@@ -55,6 +55,8 @@ export class DocsGateway implements OnGatewayInit {
       });
       doc.tags = [];
     }
+    if (!doc)
+      return;
     const [lastUpdateId, content] = await this._socketService.docCache.registerDoc(new DocumentStore(doc.id));
     doc.content = content;
     client.emit(Flags.SEND_DOC, new SendDocumentRes(doc, lastUpdateId, reqId));
