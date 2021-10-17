@@ -17,7 +17,7 @@ import { CloseElementOut, ElementStore, OpenElementOut, SendElementOut, WriteEle
 
 @WebSocketGateway({ path: "/dash" })
 @UseGuards(UserGuard)
-export class sheetsGateway implements OnGatewayInit {
+export class SheetGateway implements OnGatewayInit {
 
   @WebSocketServer() server: Server;
 
@@ -60,7 +60,7 @@ export class sheetsGateway implements OnGatewayInit {
      const [lastUpdateId, content] = await this._socketService.sheetCache.registerElement(new ElementStore(element.id));
      element.content = content;
      client.emit(Flags.SEND_SHEET, new SendElementOut(element, lastUpdateId, reqId));
-     client.join("element-" + element.id);
+     client.join("sheet-" + element.id);
      delete element.content;
      client.broadcast.to("project-" + projectId).emit(Flags.OPEN_SHEET, new OpenElementOut(userId, element));
    }
@@ -74,8 +74,8 @@ export class sheetsGateway implements OnGatewayInit {
    public closeelement(@ConnectedSocket() client: Socket, @MessageBody() elementId: number, @GetUserId() userId: string, @GetProject() projectId: string) {
  
      this._logger.log("Client closed element", elementId);
-     const roomLength = Object.keys(this.server.sockets.adapter.rooms["element-" + elementId]?.sockets || {}).length;
-     this._logger.log("Clients in element :", roomLength);
+     const roomLength = Object.keys(this.server.sockets.adapter.rooms["sheet-" + elementId]?.sockets || {}).length;
+     this._logger.log("Clients in sheet :", roomLength);
      if (roomLength <= 1)
        this._socketService.sheetCache.unregisterElement(elementId);
      client.leave("element-" + elementId);
@@ -120,7 +120,7 @@ export class sheetsGateway implements OnGatewayInit {
      this._logger.log("Client remove element", elementId);
      await this._sheetRepo.removeById(elementId);
      client.broadcast.to("project-" + projectId).emit(Flags.REMOVE_SHEET, elementId);
-     removeRoom(this.server, "element-" + elementId);
+     removeRoom(this.server, "sheet-" + elementId);
      this._socketService.sheetCache.unregisterElement(elementId);
    }
 }
