@@ -1,9 +1,8 @@
 import { EntityRepository, OneToMany } from "typeorm";
-import { Document } from "../document/document.entity";
 import { ElementRepository } from "../element/element.repository";
 import { Sheet } from "./sheet.entity";
 
-@EntityRepository(Document)
+@EntityRepository(Sheet)
 export class SheetRepository extends ElementRepository<Sheet> {
   
   public updateContent(id: number, content: string) {

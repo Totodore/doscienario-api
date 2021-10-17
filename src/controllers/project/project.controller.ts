@@ -61,6 +61,7 @@ export class ProjectController {
       .leftJoinAndSelect('project.documents', 'documents')
       .leftJoinAndSelect('documents.tags', 'documentTag')
       .leftJoinAndSelect('documents.lastEditor', 'documentLastEditor')
+      .leftJoinAndSelect('documents.sheets', 'documentSheets')
       .leftJoinAndSelect('project.blueprints', 'blueprints')
       .leftJoinAndSelect('blueprints.tags', 'blueprintTag')
       .leftJoinAndSelect('blueprints.lastEditor', 'blueprintLastEditor')
