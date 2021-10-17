@@ -1,17 +1,17 @@
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
-import { Tag } from "../tag/tag.entity";
-import { User } from "../user/user.entity";
+import { Column, Entity, ManyToOne, OneToMany, RelationId } from "typeorm";
+import { DataType } from "../data-type.entity";
+import { Document } from "../document/document.entity";
+import { ContentElementEntity, ElementEntity, IElementEntity } from "../element/element.entity";
 
 @Entity()
-export class Sheet extends BaseEntity {
+export class Sheet extends ContentElementEntity implements IElementEntity {
 
-  @PrimaryGeneratedColumn()
-  id: number;
+  @ManyToOne(() => Document, doc => doc.sheets)
+  public document: Document;
 
-  @Column("text")
-  content: string;
+  @RelationId((sheet: Sheet) => sheet.document)
+  public documentId: number;
 
-  @OneToMany(() => Tag, tag => tag.project)
-  @JoinColumn()
-  tags: Tag[];
+  readonly type = DataType.Sheet;
+
 }

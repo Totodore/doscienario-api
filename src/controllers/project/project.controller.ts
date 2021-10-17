@@ -70,7 +70,8 @@ export class ProjectController {
   @Delete("/:id")
   async deleteProject(@Param("id") id: number) {
     const project = new Project(id);
-    await this._socketManager.docCache.saveDocs();
+    await this._socketManager.sheetCache.saveElements();
+    await this._socketManager.docCache.saveElements();
     for (const document of await Document.find({ project }))
       await document.remove();
     for (const blueprint of await Blueprint.find({ project })) {
@@ -86,7 +87,8 @@ export class ProjectController {
   @Get("/:id/export")
   async exportProject(@Param("id") id: number): Promise<{ id: string }> {
     this._logger.log("Exporting project", id);
-    await this._socketManager.docCache.saveDocs();
+    await this._socketManager.sheetCache.saveElements();
+    await this._socketManager.docCache.saveElements();
     const project = await Project.findOne(id, { select: ["name", "id"]});
     const docs = await Document.find({ where: { project: new Project(id) }, relations: ["tags"], select: ["content", "title", "id"] });
     const tags = await Tag.find({ where: { project }, select: ["title", "id", "color", "primary"] });

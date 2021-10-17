@@ -7,14 +7,13 @@ import { Tag } from 'src/models/tag/tag.entity';
 import { User } from 'src/models/user/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';
 import { Flags } from './flags.enum';
-import { CreateFileReq, RenameFileReq } from './models/file.model';
-import { ColorTagReq, RenameTagReq, TagAddFile, TagRemoveFile } from './models/tag.model';
 import { createQueryBuilder } from 'typeorm';
 import { GetUserId } from 'src/decorators/user.decorator';
 import { GetProject } from 'src/decorators/project.decorator';
 import { UseGuards } from '@nestjs/common';
 import { UserGuard } from 'src/guards/user.guard';
 import { SocketService } from 'src/services/socket.service';
+import { ColorTagIn, RenameTagIn } from './models/in/tag.in';
 
 @WebSocketGateway({ path: "/dash" })
 @UseGuards(UserGuard)
@@ -65,7 +64,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage(Flags.RENAME_TAG)
-  public async updateTag(@ConnectedSocket() client: Socket, @MessageBody() body: RenameTagReq, @GetProject() projectId: string) {
+  public async updateTag(@ConnectedSocket() client: Socket, @MessageBody() body: RenameTagIn, @GetProject() projectId: string) {
     this._logger.log("Client rename tag");
 
     await createQueryBuilder(Tag).update().set({ title: body.title }).where({ title: body.oldTitle }).execute();
@@ -73,54 +72,54 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage(Flags.COLOR_TAG)
-  public async colorTag(@ConnectedSocket() client: Socket, @MessageBody() body: ColorTagReq, @GetProject() projectId: string) {
+  public async colorTag(@ConnectedSocket() client: Socket, @MessageBody() body: ColorTagIn, @GetProject() projectId: string) {
     this._logger.log("Client update color tag");
 
     await createQueryBuilder(Tag).update().set({ color: body.color.replace("#", "") }).where({ title: body.title }).execute();
     client.broadcast.to("project-"+projectId).emit(Flags.COLOR_TAG, body);
   }
 
-  @SubscribeMessage(Flags.CREATE_FILE)
-  public async createFile(@MessageBody() body: CreateFileReq, @GetUserId() userId: string, @GetProject() projectId: string) {
-    this._logger.log("Client create file");
-    const file = await File.create({
-      id: body.id,
-      mime: body.mime,
-      path: body.path,
-      createdById: userId,
-      size: body.size,
-      projectId: +projectId,
-    }).save();
-    this.server.to("project-"+projectId).emit(Flags.CREATE_FILE, file);
-  }
+  // @SubscribeMessage(Flags.CREATE_FILE)
+  // public async createFile(@MessageBody() body: CreateFileReq, @GetUserId() userId: string, @GetProject() projectId: string) {
+  //   this._logger.log("Client create file");
+  //   const file = await File.create({
+  //     id: body.id,
+  //     mime: body.mime,
+  //     path: body.path,
+  //     createdById: userId,
+  //     size: body.size,
+  //     projectId: +projectId,
+  //   }).save();
+  //   this.server.to("project-"+projectId).emit(Flags.CREATE_FILE, file);
+  // }
 
-  @SubscribeMessage(Flags.GET_FILE)
-  public async getDirInfos(@ConnectedSocket() client: Socket, @MessageBody() path: string) {
-    const files = await File.query(`SELECT * FROM file WHERE path CONTAINS ${path}`);
-    client.emit(Flags.GET_FILE, files);
-  }
+  // @SubscribeMessage(Flags.GET_FILE)
+  // public async getDirInfos(@ConnectedSocket() client: Socket, @MessageBody() path: string) {
+  //   const files = await File.query(`SELECT * FROM file WHERE path CONTAINS ${path}`);
+  //   client.emit(Flags.GET_FILE, files);
+  // }
 
-  @SubscribeMessage(Flags.RENAME_FILE)
-  public async renameFile(@MessageBody() body: RenameFileReq, @GetProject() projectId: string) {
-    await File.update(body.id, { path: body.path });
-    this.server.to("project-"+projectId).emit(Flags.RENAME_FILE, body);
-  }
+  // @SubscribeMessage(Flags.RENAME_FILE)
+  // public async renameFile(@MessageBody() body: RenameFileReq, @GetProject() projectId: string) {
+  //   await File.update(body.id, { path: body.path });
+  //   this.server.to("project-"+projectId).emit(Flags.RENAME_FILE, body);
+  // }
 
-  @SubscribeMessage(Flags.TAG_ADD_FILE)
-  public async addTagFile(@MessageBody() body: TagAddFile, @GetProject() projectId: string) {
-    const file = await File.findOne(body.fileId);
-    file.tags.push(new Tag(body.tagId));
-    file.save();
-    this.server.to("project-"+projectId).emit(Flags.TAG_ADD_FILE, body);
-  }
+  // @SubscribeMessage(Flags.TAG_ADD_FILE)
+  // public async addTagFile(@MessageBody() body: TagAddFile, @GetProject() projectId: string) {
+  //   const file = await File.findOne(body.fileId);
+  //   file.tags.push(new Tag(body.tagId));
+  //   file.save();
+  //   this.server.to("project-"+projectId).emit(Flags.TAG_ADD_FILE, body);
+  // }
 
-  @SubscribeMessage(Flags.TAG_REMOVE_FILE)
-  public async removeTagFile(@MessageBody() body: TagRemoveFile, @GetProject() projectId: string) {
-    const file = await File.findOne(body.fileId);
-    file.tags = file.tags.filter(tag => tag.id != body.tagId);
-    await file.save();
-    this.server.to("project-"+projectId).emit(Flags.TAG_REMOVE_FILE, body);
-  }
+  // @SubscribeMessage(Flags.TAG_REMOVE_FILE)
+  // public async removeTagFile(@MessageBody() body: TagRemoveFile, @GetProject() projectId: string) {
+  //   const file = await File.findOne(body.fileId);
+  //   file.tags = file.tags.filter(tag => tag.id != body.tagId);
+  //   await file.save();
+  //   this.server.to("project-"+projectId).emit(Flags.TAG_REMOVE_FILE, body);
+  // }
 
   @SubscribeMessage(Flags.RENAME_PROJECT)
   public async renameProject(@MessageBody() name: string, @GetProject() projectId: string) {

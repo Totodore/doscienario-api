@@ -1,13 +1,11 @@
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, UpdateDateColumn } from "typeorm";
+import { Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany } from "typeorm";
 import { Tag } from "../tag/tag.entity";
 import { DataType } from "../data-type.entity";
-import { ElementEntity, IElementEntity } from "../element/element.entity";
+import { ContentElementEntity, IElementEntity } from "../element/element.entity";
+import { Sheet } from "../sheet/sheet.entity";
 
 @Entity()
-export class Document extends ElementEntity implements IElementEntity {
-
-  @Column("text", { select: false, nullable: true })
-  content: string;
+export class Document extends ContentElementEntity implements IElementEntity {
 
   @ManyToMany(() => Tag, tag => tag.documents, { cascade: ["insert", "recover", "update"] })
   @JoinTable({
@@ -20,6 +18,10 @@ export class Document extends ElementEntity implements IElementEntity {
     },
   })
   tags: Tag[];
+
+  @OneToMany(() => Sheet, sheet => sheet.document, { cascade: ["insert", "recover", "update", "remove"] })
+  @JoinColumn()
+  public sheets: Sheet[];
 
   readonly type = DataType.Document;
 }

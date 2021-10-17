@@ -1,5 +1,6 @@
 export enum DataType {
   Blueprint,
   Document,
-  Tag
+  Tag,
+  Sheet
 }

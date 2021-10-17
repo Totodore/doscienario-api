@@ -48,6 +48,11 @@ export abstract class ElementEntity extends AppEntity {
     this.uid ??= uuid();
   }
 }
+export abstract class ContentElementEntity extends ElementEntity {
+
+  @Column("text", { select: false, nullable: true })
+  content: string;
+}
 export interface IElementEntity extends ElementEntity {
   tags?: Tag[];
   type: DataType;
