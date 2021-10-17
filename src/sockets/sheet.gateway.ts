@@ -15,6 +15,7 @@ import { Sheet } from 'src/models/sheet/sheet.entity';
 import { Flags } from './flags.enum';
 import { CloseElementOut, ElementStore, OpenElementOut, SendElementOut, WriteElementOut } from './models/out/element.out';
 import { Document } from 'src/models/document/document.entity';
+import { OpenSheetIn } from './models/in/sheet.in';
 
 @WebSocketGateway({ path: "/dash" })
 @UseGuards(UserGuard)
@@ -42,17 +43,17 @@ export class SheetGateway implements OnGatewayInit {
    * Send the content of the sheet to the user
    */
   @SubscribeMessage(Flags.OPEN_SHEET)
-  public async openSheet(@ConnectedSocket() client: Socket, @MessageBody() [reqId, documentId, elementId]: [string, number, number?], @GetUserId() userId: string, @GetProject() projectId: number) {
+  public async openSheet(@ConnectedSocket() client: Socket, @MessageBody() packet: OpenSheetIn, @GetUserId() userId: string, @GetProject() projectId: number) {
     let element: Sheet;
-    if (elementId) {
-      this._logger.log("Client opened element", elementId);
-      element = await this._sheetRepo.getOne(elementId);
+    if (packet.elementId) {
+      this._logger.log("Client opened element", packet.elementId);
+      element = await this._sheetRepo.getOne(packet.elementId);
     } else {
       this._logger.log("Client created element");
       element = await this._sheetRepo.post({
-        title: "Nouvelle note",
+        title: packet.title || "Nouveau sheet",
         projectId,
-        document: new Document(documentId),
+        document: new Document(packet.documentId),
         lastEditor: new User(userId),
         createdBy: new User(userId),
         content: "",
@@ -62,7 +63,7 @@ export class SheetGateway implements OnGatewayInit {
       return;
     const [lastUpdateId, content] = await this._socketService.sheetCache.registerElement(new ElementStore(element.id));
     element.content = content;
-    client.emit(Flags.SEND_SHEET, new SendElementOut(element, lastUpdateId, reqId));
+    client.emit(Flags.SEND_SHEET, new SendElementOut(element, lastUpdateId, packet.reqId));
     client.join("sheet-" + element.id);
     delete element.content;
     client.broadcast.to("project-" + projectId).emit(Flags.OPEN_SHEET, new OpenElementOut(userId, element));
