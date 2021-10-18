@@ -10,9 +10,10 @@ export class SheetRepository extends ElementRepository<Sheet> {
   }
   
   public async getOne(id: number) {
-    return super.getOne(id, ["createdBy", "lastEditor", "tags"], [
+    return super.getOne(id, ["createdBy", "lastEditor"], [
       "content",
       "id",
+      "documentId",
       "createdBy",
       "createdDate",
       "lastEditing",

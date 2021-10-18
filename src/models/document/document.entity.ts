@@ -20,7 +20,6 @@ export class Document extends ContentElementEntity implements IElementEntity {
   tags: Tag[];
 
   @OneToMany(() => Sheet, sheet => sheet.document, { cascade: ["insert", "recover", "update", "remove"] })
-  @JoinColumn()
   public sheets: Sheet[];
 
   readonly type = DataType.Document;

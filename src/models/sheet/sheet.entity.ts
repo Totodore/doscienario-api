@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, OneToMany, RelationId } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, RelationId } from "typeorm";
 import { DataType } from "../data-type.entity";
 import { Document } from "../document/document.entity";
 import { ContentElementEntity, ElementEntity, IElementEntity } from "../element/element.entity";
@@ -7,9 +7,10 @@ import { ContentElementEntity, ElementEntity, IElementEntity } from "../element/
 export class Sheet extends ContentElementEntity implements IElementEntity {
 
   @ManyToOne(() => Document, doc => doc.sheets)
+  @JoinColumn({ name: "documentId" })
   public document: Document;
 
-  @RelationId((sheet: Sheet) => sheet.document)
+  @Column()
   public documentId: number;
 
   readonly type = DataType.Sheet;
