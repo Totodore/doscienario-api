@@ -13,6 +13,7 @@ export class SheetRepository extends ElementRepository<Sheet> {
     return super.getOne(id, ["createdBy", "lastEditor"], [
       "content",
       "id",
+      "title",
       "documentId",
       "createdBy",
       "createdDate",
