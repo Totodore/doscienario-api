@@ -1,57 +1,57 @@
-import { Node } from './../models/node.entity';
-import { Document } from './../models/document.entity';
+import { WriteElementIn } from './../sockets/models/in/element.in';
 import { AppLogger } from './../utils/app-logger.util';
-import { Change, DocumentStore, WriteDocumentReq } from 'src/sockets/models/document.model';
-import { WriteNodeContentIn } from 'src/sockets/models/blueprint.model';
+import { ContentElementEntity } from 'src/models/element/element.entity';
+import { Change, ElementStore } from 'src/sockets/models/out/element.out';
 
 export class CacheUtil {
 
-  private documents: DocumentStore[] = [];
+  private elements: ElementStore[] = [];
   
   constructor(
     private readonly logger: AppLogger,
-    private readonly Table: typeof Document | typeof Node
+    private readonly Table: typeof ContentElementEntity,
   ) {
-    setInterval(() => this.saveDocs(), 1000 * 30);
+    setInterval(() => this.saveElements(), 1000 * 30);
   }
 
-  public async registerDoc(doc: DocumentStore): Promise<[number, string]> {
-    if (!this.isDocCached(doc.docId)) {
-      this.logger.log("Cache updated, new", this.Table.name, doc.docId);
-      doc.content = (await this.Table.findOne(doc.docId, { select: ["content", "id"] })).content ?? '';
-      this.documents.push(doc);
+  public async registerElement(element: ElementStore): Promise<[number, string]> {
+    if (!this.isElementCached(element.elementId)) {
+      this.logger.log("Cache updated, new", this.Table.name, element.elementId);
+      element.content = (await this.Table.findOne(element.elementId, { select: ["content", "id"] })).content ?? '';
+      this.elements.push(element);
     }
-    const docEl = this.documents.find(el => el.docId == doc.docId);
-    return [docEl.docId, docEl.content];
+    const elementEl = this.elements.find(el => el.elementId == element.elementId);
+    return [elementEl.elementId, elementEl.content];
   }
-  public async unregisterDoc(id: number, all = false) {
+  public async unregisterElement(id: number, all = false) {
     if (!all) {
-      const doc = this.documents.find(el => el.docId == id);
-      if (!doc.updated)
-        await this.Table.update(doc.docId, { content: doc.content });
-      this.documents.splice(this.documents.indexOf(doc), 1);
+      const element = this.elements.find(el => el.elementId == id);
+      if (!element) return;
+      if (!element.updated)
+        await this.Table.update(element.elementId, { content: element.content });
+      this.elements.splice(this.elements.indexOf(element), 1);
     } else {
-      for (const doc of this.documents) {
-        if (doc.parentId === id)
-          await this.unregisterDoc(doc.docId);
+      for (const element of this.elements) {
+        if (element.parentId === id)
+          await this.unregisterElement(element.elementId);
       }
     }
     this.logger.log("Cache updated, removed", this.Table.name, id);
   }
 
   /**
-   * Update a document with new changes
-   * if there is an addition it adds to the docs,
+   * Update a element with new changes
+   * if there is an addition it adds to the elements,
    * if there is no addition it stores from where to where there is one
    * [Sorcellerie qui gère le multi éditing]
    */
-  public updateDoc(packet: WriteDocumentReq | WriteNodeContentIn): [number, Change[]] {
-    //On récupère le document
-    const doc = this.documents.find(el => el.docId == ((packet as WriteDocumentReq).docId ?? (packet as WriteNodeContentIn).nodeId));
-    //On part du dernier ID du packet recu jusqu'au dernière id du document, 
-    // for (let updateIndex = packet.lastUpdateId + 1; updateIndex <= doc.lastId; updateIndex++) {
+  public updateElement(packet: WriteElementIn): [number, Change[]] {
+    //On récupère le element
+    const element = this.elements.find(el => el.elementId == packet.elementId);
+    //On part du dernier ID du packet recu jusqu'au dernière id du element, 
+    // for (let updateIndex = packet.lastUpdateId + 1; updateIndex <= element.lastId; updateIndex++) {
     //   //On récupère chaque update depuis le dernière id du packet jusqu'au dernier id actuel
-    //   const update = doc.updates.get(updateIndex);
+    //   const update = element.updates.get(updateIndex);
     //   let indexDiff = 0;
     //   //Pour chaque changement dans l'update
     //   for (const change of update) {
@@ -78,7 +78,7 @@ export class CacheUtil {
     //     }
     //   }
     // }
-    let content: string = doc.content || "";
+    let content: string = element.content || "";
     let stepIndex: number = 0;
     //Pour chaque nouveau changement on fait la mise à jour à partir du packet modifié par l'agorithme ci-dessus
     for (const change of packet.changes) {
@@ -96,29 +96,27 @@ export class CacheUtil {
         default: break;
       }
     }
-    doc.content = content;
-    doc.updated = false;
+    element.content = content;
+    element.updated = false;
     let newId: number;
-    if (!(packet instanceof WriteNodeContentIn))
-      newId = doc.addUpdate(packet.changes, packet.clientId, packet.clientUpdateId);
     return [newId, packet.changes];
   }
 
-  public getLastUpdateDoc(docId: number): Map<string, number> {
-    return this.documents.find(el => el.docId == docId).clientsUpdateId;
+  public getLastUpdateElement(elementId: number): Map<string, number> {
+    return this.elements.find(el => el.elementId == elementId).clientsUpdateId;
   }
 
-  public async saveDocs() {
-    for (const doc of this.documents) {
-      if (!doc.updated) {
-        this.logger.log("Register cache for", this.Table.name, ":", doc.docId, doc.content);
-        await this.Table.update(doc.docId, { content: doc.content });
-        doc.updated = true;
+  public async saveElements() {
+    for (const element of this.elements) {
+      if (!element.updated) {
+        this.logger.log("Register cache for", this.Table.name, ":", element.elementId, element.content);
+        await this.Table.update(element.elementId, { content: element.content });
+        element.updated = true;
       }
     }
   }
 
-  private isDocCached(id: number): boolean {
-    return this.documents.find(el => el.docId == id) != null;
+  private isElementCached(id: number): boolean {
+    return this.elements.find(el => el.elementId == id) != null;
   }
 }

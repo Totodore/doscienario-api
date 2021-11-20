@@ -3,17 +3,17 @@ import { BadRequestException, Body, Controller, Get, Header, Param, Post, Query,
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GetUser, GetUserId } from 'src/decorators/user.decorator';
 import { UserGuard } from 'src/guards/user.guard';
-import { File } from 'src/models/file.entity';
-import { User } from 'src/models/user.entity';
+import { File } from 'src/models/file/file.entity';
+import { User } from 'src/models/user/user.entity';
 import { FileService } from 'src/services/file.service';
 import { ImageService } from 'src/services/image.service';
 import { ResAddDto } from './res-add.dto';
 
 import * as uuid from "uuid";
-import { Image } from 'src/models/image.entity';
+import { Image } from 'src/models/image/image.entity';
 import { ImageAddDto } from './image-add.dto';
 import { Response } from 'express';
-import { Project } from 'src/models/project.entity';
+import { Project } from 'src/models/project/project.entity';
 
 @Controller('res')
 export class ResController {

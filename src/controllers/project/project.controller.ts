@@ -1,15 +1,14 @@
-import { Relationship } from './../../models/relationship.entity';
-import { docCache, nodeCache } from './../../main';
-import { User } from './../../models/user.entity';
-import { Image } from './../../models/image.entity';
-import { Node } from './../../models/node.entity';
+import { Relationship } from '../../models/relationship/relationship.entity';
+import { User } from '../../models/user/user.entity';
+import { Image } from '../../models/image/image.entity';
+import { Node } from '../../models/node/node.entity';
 import { createQueryBuilder } from 'typeorm';
 import { ExportService } from './../../services/export.service';
-import { Tag } from './../../models/tag.entity';
-import { Project } from './../../models/project.entity';
+import { Tag } from '../../models/tag/tag.entity';
+import { Project } from '../../models/project/project.entity';
 import { ImageService } from './../../services/image.service';
 import { FileService } from './../../services/file.service';
-import { Document } from 'src/models/document.entity';
+import { Document } from 'src/models/document/document.entity';
 import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, Header, Param, Post, Query, Req, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { GetUser, GetUserId } from 'src/decorators/user.decorator';
 import { UserGuard } from 'src/guards/user.guard';
@@ -19,16 +18,17 @@ import { ProjectUserDto } from './project-user.dto';
 import * as AdmZip from "adm-zip";
 import { v4 as uuid } from "uuid";
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Blueprint } from 'src/models/blueprint.entity';
+import { Blueprint } from 'src/models/blueprint/blueprint.entity';
+import { SocketService } from 'src/services/socket.service';
 @Controller('project')
 @UseGuards(UserGuard)
 export class ProjectController {
 
   constructor(
     private readonly _logger: AppLogger, 
-    private readonly _fileManager: FileService,
     private readonly _imageManager: ImageService,
     private readonly _exportManager: ExportService,
+    private readonly _socketManager: SocketService,
   ) { }
 
   @Post()
@@ -53,19 +53,26 @@ export class ProjectController {
 
   @Get("/:id")
   async getProject(@Param("id") id: number, @GetUser({ joinProjects: true }) user: User): Promise<Project> {
-    const project = await Project.findOne(id, { relations: ["users", "createdBy", "tags"] });
-    const docs = await Document.find({ where: { project }, relations: ["tags", "lastEditor"] });
-    const blueprints = await Blueprint.find({ where: { project }, relations: ["tags", "lastEditor"] });
-    project.documents = docs;
-    project.blueprints = blueprints;
-    return project;
+    return createQueryBuilder(Project, 'project')
+      .where('project.id = :id', { id, user })
+      .leftJoinAndSelect('project.users', 'user')
+      .leftJoinAndSelect('project.createdBy', 'createdBy')
+      .leftJoinAndSelect('project.tags', 'tag')
+      .leftJoinAndSelect('project.documents', 'documents')
+      .leftJoinAndSelect('documents.tags', 'documentTag')
+      .leftJoinAndSelect('documents.lastEditor', 'documentLastEditor')
+      .leftJoinAndSelect('documents.sheets', 'documentSheets')
+      .leftJoinAndSelect('project.blueprints', 'blueprints')
+      .leftJoinAndSelect('blueprints.tags', 'blueprintTag')
+      .leftJoinAndSelect('blueprints.lastEditor', 'blueprintLastEditor')
+      .getOne();
   }
 
   @Delete("/:id")
   async deleteProject(@Param("id") id: number) {
     const project = new Project(id);
-    await nodeCache.saveDocs();
-    await docCache.saveDocs();
+    await this._socketManager.sheetCache.saveElements();
+    await this._socketManager.docCache.saveElements();
     for (const document of await Document.find({ project }))
       await document.remove();
     for (const blueprint of await Blueprint.find({ project })) {
@@ -81,13 +88,13 @@ export class ProjectController {
   @Get("/:id/export")
   async exportProject(@Param("id") id: number): Promise<{ id: string }> {
     this._logger.log("Exporting project", id);
-    await docCache.saveDocs();
-    await nodeCache.saveDocs();
+    await this._socketManager.sheetCache.saveElements();
+    await this._socketManager.docCache.saveElements();
     const project = await Project.findOne(id, { select: ["name", "id"]});
     const docs = await Document.find({ where: { project: new Project(id) }, relations: ["tags"], select: ["content", "title", "id"] });
-    const tags = await Tag.find({ where: { project }, select: ["name", "id", "color", "primary"] });
+    const tags = await Tag.find({ where: { project }, select: ["title", "id", "color", "primary"] });
     const images = await Image.find({ where: { project: new Project(id) }, select: ["height", "width", "id", "size"] });
-    const blueprints = await Blueprint.find({ where: { project }, select: ["id", "name", "x", "y"], relations: ["tags", "nodes", "relationships"] });
+    const blueprints = await Blueprint.find({ where: { project }, select: ["id", "title", "x", "y"], relations: ["tags", "nodes", "relationships"] });
     // const files = await File.find({ where: { project }, select: ["mime", "path", "id"], relations: ["tags"]});
     const nodes: Node[] = blueprints.reduce((prev, curr) => {
       const nodes = curr.nodes;

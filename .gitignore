@@ -36,3 +36,5 @@ lerna-debug.log*
 # Data
 data/**
 *.env
+
+test.txt

@@ -1,8 +1,8 @@
 import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, RelationId, UpdateDateColumn } from "typeorm";
-import { AppEntity } from "./app.entity";
-import { Project } from "./project.entity";
-import { Tag } from "./tag.entity";
-import { User } from "./user.entity";
+import { AppEntity } from "../app.entity";
+import { Project } from "../project/project.entity";
+import { Tag } from "../tag/tag.entity";
+import { User } from "../user/user.entity";
 
 @Entity()
 export class File extends AppEntity {
