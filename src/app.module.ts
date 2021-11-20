@@ -29,6 +29,7 @@ import { RelationshipRepository } from './models/relationship/relationship.repos
 import { NodeRepository } from './models/node/node.repository';
 import { SocketService } from './services/socket.service';
 import { SheetGateway } from './sockets/sheet.gateway';
+import { SystemController } from './controllers/system/system.controller';
 
 @Module({
   imports: [
@@ -58,7 +59,7 @@ import { SheetGateway } from './sockets/sheet.gateway';
       // logging: true,
     }),
   ],
-  controllers: [UserController, ResController, ProjectController],
+  controllers: [UserController, ResController, ProjectController, SystemController],
   providers: [JwtService, FileService, ImageService, DashboardGateway, DocsGateway, TreeGateway, SheetGateway, ExportService, BlueprintRepository, DocumentRepository, NodeRepository, RelationshipRepository, SocketService],
 })
 export class AppModule { }
