@@ -99,7 +99,7 @@ export class DocsGateway implements OnGatewayInit {
 
     const [updateId, changes] = this._socketService.docCache.updateElement(body);
     const userUpdates = this._socketService.docCache.getLastUpdateElement(body.elementId);
-    for (const clientId of Object.keys(this.server.sockets.adapter.rooms["doc-" + body.elementId].sockets)) {
+    for (const clientId of Object.keys(this.server.sockets.adapter.rooms["doc-" + body.elementId]?.sockets || {})) {
       const client = this.server.sockets.connected[clientId];
       client.emit(Flags.WRITE_DOC, new WriteElementOut(
         body.elementId,
