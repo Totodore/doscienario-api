@@ -8,7 +8,8 @@ import { User } from "../user/user.entity";
 export abstract class ElementRepository<T extends IElementEntity> extends AppRepository<T> {
 
   public async rename(id: number, title: string) {
-    return super.update(id, { title: () => `'${title}'` });
+    //@ts-ignore
+    return super.update(id, { title });
   }
 
   public async updateColor(id: number, color: string) {
