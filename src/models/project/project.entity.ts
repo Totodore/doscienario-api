@@ -50,4 +50,9 @@ export class Project extends AppEntity {
   @JoinColumn()
   files: File[];
 
+  @BeforeInsert()
+  public beforeInsert() {
+    this.uid ??= uuid();
+  }
+
 }

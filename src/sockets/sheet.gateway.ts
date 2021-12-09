@@ -98,7 +98,7 @@ export class SheetGateway implements OnGatewayInit {
 
     const [updateId, changes] = this._socketService.sheetCache.updateElement(body);
     const userUpdates = this._socketService.sheetCache.getLastUpdateElement(body.elementId);
-    for (const clientId of Object.keys(this.server.sockets.adapter.rooms["sheet-" + body.elementId].sockets)) {
+    for (const clientId of Object.keys(this.server.sockets.adapter.rooms["sheet-" + body.elementId]?.sockets || {})) {
       const client = this.server.sockets.connected[clientId];
       client.emit(Flags.WRITE_SHEET, new WriteElementOut(
         body.elementId,
