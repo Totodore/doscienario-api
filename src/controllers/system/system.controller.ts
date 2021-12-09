@@ -5,7 +5,7 @@ export class SystemController {
 
   @Get("check-version")
   public checkAllowedVersions(@Query("version") version: string) {
-    const versions = ["2.0.42"];
+    const versions = ["2.0.42", "2.0.45"];
     return { allowed: versions.includes(version), versions };
   }
 }
