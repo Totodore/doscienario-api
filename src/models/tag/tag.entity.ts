@@ -13,9 +13,12 @@ export class Tag extends AppEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @PrimaryColumn({ unique: true })
+  @Column()
   title: string;
 
+  /**
+   * @deprecated Will not be used anymore
+   */
   @Column({ default: false })
   primary: boolean;
 

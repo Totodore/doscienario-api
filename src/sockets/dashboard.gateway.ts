@@ -59,7 +59,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   @SubscribeMessage(Flags.REMOVE_TAG)
   public async removeTag(@ConnectedSocket() client: Socket, @MessageBody() tagName: string, @GetProject() projectId: string) {
     this._logger.log("Client remove tag");
-    await (await Tag.findOne({ where: { title: tagName } })).remove();
+    await (await Tag.findOne({ where: { title: tagName, project: new Project(projectId) } })).remove();
     client.broadcast.to("project-"+projectId).emit(Flags.REMOVE_TAG, tagName);
   }
 
@@ -67,7 +67,10 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   public async updateTag(@ConnectedSocket() client: Socket, @MessageBody() body: RenameTagIn, @GetProject() projectId: string) {
     this._logger.log("Client rename tag");
 
-    await createQueryBuilder(Tag).update().set({ title: body.title }).where({ title: body.oldTitle }).execute();
+    await createQueryBuilder(Tag).update()
+      .set({ title: body.title })
+      .where({ title: body.oldTitle, project: new Project(projectId) })
+      .execute();
     client.broadcast.to("project-"+projectId).emit(Flags.RENAME_TAG, body);
   }
 
@@ -75,7 +78,10 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   public async colorTag(@ConnectedSocket() client: Socket, @MessageBody() body: ColorTagIn, @GetProject() projectId: string) {
     this._logger.log("Client update color tag");
 
-    await createQueryBuilder(Tag).update().set({ color: body.color.replace("#", "") }).where({ title: body.title }).execute();
+    await createQueryBuilder(Tag).update()
+      .set({ color: body.color.replace("#", "") })
+      .where({ title: body.title, project: new Project(projectId) })
+      .execute();
     client.broadcast.to("project-"+projectId).emit(Flags.COLOR_TAG, body);
   }
 
