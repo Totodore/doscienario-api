@@ -20,6 +20,7 @@ import { v4 as uuid } from "uuid";
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Blueprint } from 'src/models/blueprint/blueprint.entity';
 import { SocketService } from 'src/services/socket.service';
+import { Sheet } from 'src/models/sheet/sheet.entity';
 @Controller('project')
 @UseGuards(UserGuard)
 export class ProjectController {
@@ -75,6 +76,8 @@ export class ProjectController {
     await this._socketManager.docCache.saveElements();
     for (const document of await Document.find({ project }))
       await document.remove();
+    for (const sheet of await Sheet.find({ project }))
+      await sheet.remove();
     for (const blueprint of await Blueprint.find({ project })) {
       await Node.delete({ blueprint });
       await Relationship.delete({ blueprint });
@@ -91,10 +94,11 @@ export class ProjectController {
     await this._socketManager.sheetCache.saveElements();
     await this._socketManager.docCache.saveElements();
     const project = await Project.findOne(id, { select: ["name", "id"]});
-    const docs = await Document.find({ where: { project: new Project(id) }, relations: ["tags"], select: ["content", "title", "id"] });
-    const tags = await Tag.find({ where: { project }, select: ["title", "id", "color", "primary"] });
-    const images = await Image.find({ where: { project: new Project(id) }, select: ["height", "width", "id", "size"] });
+    const docs = await Document.find({ where: { project }, relations: ["tags"], select: ["content", "title", "id"] });
+    const tags = await Tag.find({ where: { project }, select: ["title", "id", "color"] });
+    const images = await Image.find({ where: { project }, select: ["height", "width", "id", "size"] });
     const blueprints = await Blueprint.find({ where: { project }, select: ["id", "title", "x", "y"], relations: ["tags", "nodes", "relationships"] });
+    const sheets = await Sheet.find({ where: { project }, select: ["content", "id", "documentId", "title"] });
     // const files = await File.find({ where: { project }, select: ["mime", "path", "id"], relations: ["tags"]});
     const nodes: Node[] = blueprints.reduce((prev, curr) => {
       const nodes = curr.nodes;
@@ -115,6 +119,7 @@ export class ProjectController {
     zip.addFile("blueprints.json", Buffer.from(JSON.stringify(blueprints), "utf-8"));
     zip.addFile("nodes.json", Buffer.from(JSON.stringify(nodes)));
     zip.addFile("relationships.json", Buffer.from(JSON.stringify(rels)));
+    zip.addFile("sheets.json", Buffer.from(JSON.stringify(sheets), "utf-8"));
     // zip.addFile("files.json", Buffer.from(JSON.stringify(files)));
 
     for (const image of images)
@@ -131,7 +136,7 @@ export class ProjectController {
   @UseGuards(UserGuard)
   @UseInterceptors(FileInterceptor("data"))
   async importProject(@GetUser() user: User, @UploadedFile() data: Express.Multer.File) {
-    this._logger.log("importing project");
+    this._logger.log("Importing project for user:", user.name);
     const zip = new AdmZip(data.buffer);
     const project: Project = JSON.parse(zip.readFile("project.json").toString("utf-8"));
     const docs: Document[] = JSON.parse(zip.readFile("docs.json").toString("utf-8"));
@@ -140,6 +145,7 @@ export class ProjectController {
     const blueprints: Blueprint[] = JSON.parse(zip.readFile("blueprints.json").toString("utf-8"));
     const nodes: Node[] = JSON.parse(zip.readFile("nodes.json").toString("utf-8"));
     const relationships: Relationship[] = JSON.parse(zip.readFile("relationships.json").toString("utf-8"));
+    const sheets: Sheet[] = JSON.parse(zip.readFile("sheets.json").toString("utf-8"));
     /** 
      * Import project and get its id 
      */
@@ -167,18 +173,35 @@ export class ProjectController {
      * Create docs with the new tag list for the docs 
      */
     this._logger.log("3 - Import documents into Database");
-    await createQueryBuilder(Document).insert().values(docs.map(doc => Document.create({
-      ...doc,
+    const documentMap = new Map<number, Document>();
+    for (const doc of docs) {
+      documentMap.set(doc.id, await Document.create({
+        ...doc,
+        id: null,
+        createdBy: user,
+        lastEditor: user,
+        project: new Project(projectId),
+        tags: doc.tags?.map(oldTag => tagMap.get(oldTag.id))
+      }).save());
+    }
+    
+    /**
+     * Create sheets and map ids + docs
+     */
+    this._logger.log("4 - Import sheets into Database");
+    await createQueryBuilder().insert().into(Sheet).values(sheets.map(sheet => Sheet.create({
+      ...sheet,
       id: null,
+      documentId: documentMap.get(sheet.documentId)?.id,
       createdBy: user,
-      project: new Project(projectId),  
-      tags: doc.tags?.map(oldTag => tagMap.get(oldTag.id))
+      lastEditor: user,
+      project: new Project(projectId),
     }))).execute();
     
     /** 
      * Create Blueprints and map the new ids 
      */
-    this._logger.log("4 - Import blueprints into Database");
+    this._logger.log("5 - Import blueprints into Database");
     const blueprintMap = new Map<number, Blueprint>();
     for (const blueprint of blueprints) {
       blueprintMap.set(blueprint.id, await Blueprint.create({
@@ -193,7 +216,7 @@ export class ProjectController {
     /** 
      * Create nodes with the mapped blueprint ids 
      */
-    this._logger.log("5 - Import blueprint nodes into Database");
+    this._logger.log("6 - Import blueprint nodes into Database");
     const nodeMap = new Map<number, number>();
     for (const node of nodes) {
       nodeMap.set(node.id, (await Node.create({
@@ -208,7 +231,7 @@ export class ProjectController {
     /** 
      * Create relationships with the mapped blueprint ids 
      */
-    this._logger.log("6 - Import blueprint relationships into Database")
+    this._logger.log("7 - Import blueprint relationships into Database")
     await createQueryBuilder(Relationship).insert().values(relationships.map(rel => Relationship.create({
       ...rel,
       id: null,
@@ -220,7 +243,7 @@ export class ProjectController {
     /** 
      * Importing the images buffer 
      */
-    this._logger.log("6 - Importing buffer images into filesystem");
+    this._logger.log("8 - Importing buffer images into filesystem");
     for (const img of zip.getEntries().filter(el => el.comment === "image_dir"))
       await this._imageManager.writeImage(img.getData(), img.name);
   }
