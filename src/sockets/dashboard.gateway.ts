@@ -1,7 +1,6 @@
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { UserRes } from 'src/controllers/user/user.res';
-import { File } from 'src/models/file/file.entity';
 import { Project } from 'src/models/project/project.entity';
 import { Tag } from 'src/models/tag/tag.entity';
 import { User } from 'src/models/user/user.entity';
@@ -149,9 +148,4 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     this.server.to("project-"+projectId).emit(Flags.REMOVE_USER_PROJECT, user);
   }
 
-}
-
-interface DataInterface {
-  user: string;
-  project: number
 }

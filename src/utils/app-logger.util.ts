@@ -1,4 +1,4 @@
-import { Injectable, Logger, Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 
 @Module({
   providers: [AppLogger],

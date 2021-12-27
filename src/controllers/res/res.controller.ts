@@ -1,5 +1,5 @@
 import { ExportService } from './../../services/export.service';
-import { BadRequestException, Body, Controller, Get, Header, Param, Post, Query, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Header, Param, Post, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GetUser, GetUserId } from 'src/decorators/user.decorator';
 import { UserGuard } from 'src/guards/user.guard';
@@ -11,7 +11,6 @@ import { ResAddDto } from './res-add.dto';
 
 import * as uuid from "uuid";
 import { Image } from 'src/models/image/image.entity';
-import { ImageAddDto } from './image-add.dto';
 import { Response } from 'express';
 import { Project } from 'src/models/project/project.entity';
 

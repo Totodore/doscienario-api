@@ -1,6 +1,6 @@
 import { Blueprint } from '../blueprint/blueprint.entity';
 import { File } from '../file/file.entity';
-import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryColumn, PrimaryGeneratedColumn, RelationId } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryGeneratedColumn, RelationId } from "typeorm";
 import { AppEntity } from "../app.entity";
 import { Project } from "../project/project.entity";
 import { User } from "../user/user.entity";

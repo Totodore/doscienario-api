@@ -1,5 +1,5 @@
 import { Exclude } from "class-transformer";
-import { BaseEntity, Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from "typeorm";
 import { AppEntity } from "../app.entity";
 import { Project } from "../project/project.entity";
 

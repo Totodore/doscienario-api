@@ -1,7 +1,6 @@
-import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, RelationId, UpdateDateColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Project } from "../project/project.entity";
 import { User } from "../user/user.entity";
-import { Document } from "../document/document.entity";
 import { AppEntity } from "../app.entity";
 
 @Entity()

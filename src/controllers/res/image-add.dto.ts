@@ -1,5 +1,4 @@
 import { IsNumber } from "class-validator";
-import { IsNull } from "typeorm";
 
 import { ApiProperty } from '@nestjs/swagger';
 export class ImageAddDto {

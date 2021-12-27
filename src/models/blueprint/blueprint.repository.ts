@@ -2,7 +2,6 @@ import { DeepPartial, EntityRepository } from "typeorm";
 import { ElementRepository } from "../element/element.repository";
 import { Blueprint } from "./blueprint.entity";
 import { Node } from "../node/node.entity";
-import { User } from "../user/user.entity";
 import { Relationship } from "../relationship/relationship.entity";
 
 @EntityRepository(Blueprint)

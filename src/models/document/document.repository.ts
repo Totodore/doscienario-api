@@ -1,10 +1,6 @@
 import { EntityRepository } from "typeorm";
-import { AppRepository } from "../app.repository";
 import { ElementRepository } from "../element/element.repository";
-import { Project } from "../project/project.entity";
 import { Sheet } from "../sheet/sheet.entity";
-import { Tag } from "../tag/tag.entity";
-import { User } from "../user/user.entity";
 import { Document } from "./document.entity";
 
 @EntityRepository(Document)
