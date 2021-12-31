@@ -144,7 +144,7 @@ export class ProjectController {
     const blueprints: Blueprint[] = JSON.parse(zip.readFile("blueprints.json").toString("utf-8"));
     const nodes: Node[] = JSON.parse(zip.readFile("nodes.json").toString("utf-8"));
     const relationships: Relationship[] = JSON.parse(zip.readFile("relationships.json").toString("utf-8"));
-    const sheets: Sheet[] = JSON.parse(zip.readFile("sheets.json").toString("utf-8"));
+    const sheets: Sheet[] = zip.readFile("sheets.json") ? JSON.parse(zip.readFile("sheets.json").toString("utf-8")) : [];
     /** 
      * Import project and get its id 
      */
