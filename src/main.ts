@@ -1,13 +1,8 @@
-import { Document } from 'src/models/document/document.entity';
-import { Node } from './models/node/node.entity';
-import { AppLogger } from './utils/app-logger.util';
-import { CacheUtil } from './utils/cache-sys.util';
+
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { DocumentRepository } from './models/document/document.repository';
 global.atob = require("atob");
 global.Blob = require("node-blob");
 

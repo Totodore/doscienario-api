@@ -1,10 +1,8 @@
 import { DataType } from '../data-type.entity';
 import { Relationship } from '../relationship/relationship.entity';
-import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany } from "typeorm";
 import { Node } from "../node/node.entity";
 import { Tag } from "../tag/tag.entity";
-import { User } from "../user/user.entity";
-import { Project } from "../project/project.entity";
 import { ElementEntity, IElementEntity } from '../element/element.entity';
 
 @Entity()

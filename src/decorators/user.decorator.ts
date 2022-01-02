@@ -1,4 +1,4 @@
-import { createParamDecorator, ExecutionContext, SetMetadata } from '@nestjs/common';
+import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { User } from 'src/models/user/user.entity';
 import * as jwt from "jsonwebtoken";

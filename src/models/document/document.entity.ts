@@ -1,4 +1,4 @@
-import { Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany } from "typeorm";
+import { Entity, JoinTable, ManyToMany, OneToMany } from "typeorm";
 import { Tag } from "../tag/tag.entity";
 import { DataType } from "../data-type.entity";
 import { ContentElementEntity, IElementEntity } from "../element/element.entity";

@@ -1,3 +1,4 @@
+import { Logs } from './models/logs/logs.entity';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -53,6 +54,7 @@ import { SystemController } from './controllers/system/system.controller';
         Relationship,
         Sheet,
         Tag,
+        Logs,
       ],
       synchronize: process.env.NODE_ENV == "dev",
       logging: ["error"],

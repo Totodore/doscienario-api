@@ -1,6 +1,6 @@
-import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
+
 import { AppRepository } from "../app.repository";
-import { ElementEntity, IElementEntity } from "./element.entity";
+import { IElementEntity } from "./element.entity";
 import { Project } from "../project/project.entity";
 import { Tag } from "../tag/tag.entity";
 import { User } from "../user/user.entity";
