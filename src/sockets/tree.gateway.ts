@@ -153,9 +153,9 @@ export class TreeGateway implements OnGatewayInit {
   }
 
   @SubscribeMessage(Flags.TAG_REMOVE_BLUEPRINT)
-  public async removeTagBlueprint(@ConnectedSocket() client: Socket, @MessageBody() body: RemoveTagElementIn, @GetProject() projectId: string) {
+  public async removeTagBlueprint(@ConnectedSocket() client: Socket, @MessageBody() body: RemoveTagElementIn, @GetProject() projectId: number) {
     this._logger.log("Client removed tag to blueprint", body.elementId, body.title);
-    await this._blueprintRepo.removeTag(body.elementId, body.title);
+    await this._blueprintRepo.removeTag(body.elementId, body.title, projectId);
     client.broadcast.to("project-" + projectId.toString()).emit(Flags.TAG_REMOVE_BLUEPRINT, body);
   }
 

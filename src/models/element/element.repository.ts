@@ -18,7 +18,7 @@ export abstract class ElementRepository<T extends IElementEntity> extends AppRep
 
   public async addTag(id: number, title: string, projectId: number, userId: string) {
     let el = await this.findOne(id, { relations: ["tags"] });
-    let tag = await Tag.findOneOrCreate<Tag>({ where: { title } }, {
+    let tag = await Tag.findOneOrCreate<Tag>({ where: { title, project: new Project(projectId) } }, {
       title,
       project: new Project(projectId),
       createdBy: new User(userId)
@@ -27,9 +27,9 @@ export abstract class ElementRepository<T extends IElementEntity> extends AppRep
     return { el, tag };
   }
 
-  public async removeTag(id: number, title: string) {
+  public async removeTag(id: number, title: string, projectId: number) {
     const el = await this.findOne(id, { relations: ["tags"] });
-    await this.createQueryBuilder().relation("tags").of(el).remove(await Tag.findOne({ where: { title } }));
+    await this.createQueryBuilder().relation("tags").of(el).remove(await Tag.findOne({ where: { title, project: new Project(projectId) } }));
   }
 
 }

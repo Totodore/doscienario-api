@@ -152,9 +152,9 @@ export class DocsGateway implements OnGatewayInit {
   }
 
   @SubscribeMessage(Flags.TAG_REMOVE_DOC)
-  public async removeTagDoc(@ConnectedSocket() client: Socket, @MessageBody() body: RemoveTagElementIn, @GetProject() projectId: string) {
+  public async removeTagDoc(@ConnectedSocket() client: Socket, @MessageBody() body: RemoveTagElementIn, @GetProject() projectId: number) {
     this._logger.log("Client removed tag to doc", body.elementId, body.title);
-    await this._documentRepo.removeTag(body.elementId, body.title);
+    await this._documentRepo.removeTag(body.elementId, body.title, projectId);
     client.broadcast.to("project-" + projectId).emit(Flags.TAG_REMOVE_DOC, body);
   }
 
