@@ -34,7 +34,6 @@ import { SystemController } from './controllers/system/system.controller';
 
 @Module({
   imports: [
-    AppLogger,
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'mysql',
@@ -62,6 +61,21 @@ import { SystemController } from './controllers/system/system.controller';
     }),
   ],
   controllers: [UserController, ResController, ProjectController, SystemController],
-  providers: [JwtService, FileService, ImageService, DashboardGateway, DocsGateway, TreeGateway, SheetGateway, ExportService, BlueprintRepository, DocumentRepository, NodeRepository, RelationshipRepository, SocketService],
+  providers: [
+    JwtService,
+    FileService,
+    ImageService,
+    DashboardGateway,
+    DocsGateway,
+    TreeGateway,
+    SheetGateway,
+    ExportService,
+    BlueprintRepository,
+    DocumentRepository,
+    NodeRepository,
+    RelationshipRepository,
+    AppLogger,
+    SocketService
+  ],
 })
 export class AppModule { }

@@ -22,6 +22,7 @@ export class SystemController {
   @UseGuards(UserGuard)  
   public async bugReport(@Body("data") logs: string, @Body("message") message: string, @GetUser() user: User) {
     await Logs.create({ message, logs, user }).save();
+    
     this.logger.log("Saving logs for bug report with user", user.id);
   }
 }

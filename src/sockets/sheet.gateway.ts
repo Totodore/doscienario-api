@@ -3,7 +3,6 @@ import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSo
 import { Server, Socket } from 'socket.io';
 import { User } from 'src/models/user/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';
-import { removeRoom } from 'src/utils/socket.util';
 import { getCustomRepository } from 'typeorm';
 import { GetProject } from 'src/decorators/project.decorator';
 import { GetUserId } from 'src/decorators/user.decorator';
@@ -17,7 +16,7 @@ import { CloseElementOut, ElementStore, OpenElementOut, SendElementOut, WriteEle
 import { Document } from 'src/models/document/document.entity';
 import { OpenSheetIn } from './models/in/sheet.in';
 
-@WebSocketGateway({ path: "/dash" })
+@WebSocketGateway({ path: "/dash", cors: true })
 @UseGuards(UserGuard)
 export class SheetGateway implements OnGatewayInit {
 
@@ -98,8 +97,7 @@ export class SheetGateway implements OnGatewayInit {
 
     const [updateId, changes] = this._socketService.sheetCache.updateElement(body);
     const userUpdates = this._socketService.sheetCache.getLastUpdateElement(body.elementId);
-    for (const clientId of Object.keys(this.server.sockets.adapter.rooms["sheet-" + body.elementId]?.sockets || {})) {
-      const client = this.server.sockets.connected[clientId];
+    for (const client of this.server.of("sheet-" + body.elementId).sockets.values()) {
       client.emit(Flags.WRITE_SHEET, new WriteElementOut(
         body.elementId,
         userId,
@@ -124,7 +122,7 @@ export class SheetGateway implements OnGatewayInit {
     this._logger.log("Client remove element", elementId);
     await this._sheetRepo.removeById(elementId);
     client.broadcast.to("project-" + projectId).emit(Flags.REMOVE_SHEET, [elementId, documentId]);
-    removeRoom(this.server, "sheet-" + elementId);
+    this.server.socketsLeave("sheet-" + elementId);
     this._socketService.sheetCache.unregisterElement(elementId);
   }
 }

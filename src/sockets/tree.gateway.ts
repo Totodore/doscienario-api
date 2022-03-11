@@ -7,7 +7,6 @@ import { ConnectedSocket, MessageBody, OnGatewayInit, SubscribeMessage, WebSocke
 import { Server, Socket } from 'socket.io';
 import { User } from 'src/models/user/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';
-import { removeRoom } from 'src/utils/socket.util';
 import { Flags } from './flags.enum';
 import { getCustomRepository } from 'typeorm';
 import { GetProject } from 'src/decorators/project.decorator';
@@ -21,7 +20,7 @@ import { CreateNodeIn, EditSumarryIn, PlaceNodeIn, RemoveNodeIn } from './models
 import { AddTagElementOut } from './models/out/tag.model';
 import { AddTagElementIn, RemoveTagElementIn } from './models/in/tag.in';
 
-@WebSocketGateway({ path: "/dash" })
+@WebSocketGateway({ path: "/dash", cors: true })
 @UseGuards(UserGuard)
 export class TreeGateway implements OnGatewayInit {
 
@@ -75,7 +74,7 @@ export class TreeGateway implements OnGatewayInit {
     this._logger.log("Client remove blueprint", docId);
     await this._blueprintRepo.removeById(docId);
     client.broadcast.to("project-" + projectId.toString()).emit(Flags.REMOVE_BLUEPRINT, docId);
-    removeRoom(this.server, "blueprint-" + docId);
+    this.server.socketsLeave("blueprint-" + docId);
   }
 
   @SubscribeMessage(Flags.RENAME_BLUEPRINT)

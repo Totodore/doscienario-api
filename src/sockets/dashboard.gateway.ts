@@ -14,7 +14,7 @@ import { UserGuard } from 'src/guards/user.guard';
 import { SocketService } from 'src/services/socket.service';
 import { ColorTagIn, RenameTagIn } from './models/in/tag.in';
 
-@WebSocketGateway({ path: "/dash" })
+@WebSocketGateway({ path: "/dash", cors: true })
 @UseGuards(UserGuard)
 export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
 

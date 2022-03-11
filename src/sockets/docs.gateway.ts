@@ -5,7 +5,6 @@ import { Server, Socket } from 'socket.io';
 import { Document } from 'src/models/document/document.entity';
 import { User } from 'src/models/user/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';
-import { removeRoom } from 'src/utils/socket.util';
 import { Flags } from './flags.enum';
 import { getCustomRepository } from 'typeorm';
 import { GetProject } from 'src/decorators/project.decorator';
@@ -19,7 +18,7 @@ import { CursorDocumentOut } from './models/out/document.out';
 import { AddTagElementIn, RemoveTagElementIn } from './models/in/tag.in';
 import { AddTagElementOut } from './models/out/tag.model';
 
-@WebSocketGateway({ path: "/dash" })
+@WebSocketGateway({ path: "/dash", cors: true })
 @UseGuards(UserGuard)
 export class DocsGateway implements OnGatewayInit {
 
@@ -99,8 +98,7 @@ export class DocsGateway implements OnGatewayInit {
 
     const [updateId, changes] = this._socketService.docCache.updateElement(body);
     const userUpdates = this._socketService.docCache.getLastUpdateElement(body.elementId);
-    for (const clientId of Object.keys(this.server.sockets.adapter.rooms["doc-" + body.elementId]?.sockets || {})) {
-      const client = this.server.sockets.connected[clientId];
+    for (const client of this.server.of(`doc-${body.elementId}`).sockets.values()) {
       client.emit(Flags.WRITE_DOC, new WriteElementOut(
         body.elementId,
         userId,
@@ -132,7 +130,7 @@ export class DocsGateway implements OnGatewayInit {
     this._logger.log("Client remove doc", docId);
     await this._documentRepo.removeById(docId);
     client.broadcast.to("project-" + projectId).emit(Flags.REMOVE_DOC, docId);
-    removeRoom(this.server, "doc-" + docId);
+    this.server.socketsLeave("doc-" + docId);
     this._socketService.docCache.unregisterElement(docId);
   }
 
