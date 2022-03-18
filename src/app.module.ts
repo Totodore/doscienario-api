@@ -31,6 +31,7 @@ import { NodeRepository } from './models/node/node.repository';
 import { SocketService } from './services/socket.service';
 import { SheetGateway } from './sockets/sheet.gateway';
 import { SystemController } from './controllers/system/system.controller';
+import { GithubService } from './services/github.service';
 
 @Module({
   imports: [
@@ -75,7 +76,8 @@ import { SystemController } from './controllers/system/system.controller';
     NodeRepository,
     RelationshipRepository,
     AppLogger,
-    SocketService
+    SocketService,
+    GithubService,
   ],
 })
 export class AppModule { }

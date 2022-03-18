@@ -25,6 +25,7 @@
     "@nestjs/swagger": "^5.2.0",
     "@nestjs/typeorm": "^8.0.3",
     "@nestjs/websockets": "^8.4.0",
+    "@octokit/core": "^3.6.0",
     "adm-zip": "^0.5.3",
     "atob": "^2.1.2",
     "bcrypt": "^5.0.0",
