@@ -13,6 +13,7 @@ import { UseGuards } from '@nestjs/common';
 import { UserGuard } from 'src/guards/user.guard';
 import { SocketService } from 'src/services/socket.service';
 import { ColorTagIn, RenameTagIn } from './models/in/tag.in';
+import * as jwt from "jsonwebtoken";
 
 @WebSocketGateway({ path: "/dash", cors: true })
 @UseGuards(UserGuard)
@@ -29,15 +30,17 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
     this._logger.log(`Websocket: namespace 'dash' initialized`);
   }
 
-  public handleConnection(@ConnectedSocket() client: Socket, @GetUserId() userId: string, @GetProject() projectId: string) {
-    this._logger.log("New client connected ", userId, projectId);
+  public handleConnection(@ConnectedSocket() client: Socket) {
+    const userId = jwt.decode(client.handshake.query.authorization as string).toString();
+    const projectId = client.handshake.query.project;
+    this._logger.log("New client connected user:", userId, "project:", projectId);
     this._socketService.sockets.set(client.id, userId);
     client.join("project-"+projectId);
     this.server.to("project-"+projectId).emit(Flags.OPEN_PROJECT, userId);
   }
 
   public handleDisconnect(@ConnectedSocket() client: Socket) {
-    const userId = client.handshake.headers.user;
+    const userId = jwt.decode(client.handshake.query.authorization as string).toString();
     const projectId = client.handshake.query.project;
     this._logger.log("Client disconnect", userId, projectId);
     this._socketService.sockets.delete(client.id);
