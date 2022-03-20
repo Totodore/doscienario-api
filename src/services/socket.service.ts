@@ -8,6 +8,6 @@ import { CacheUtil } from 'src/utils/cache-sys.util';
 export class SocketService {
 
   public sockets: Map<string, string> = new Map();
-  public docCache = new CacheUtil(new AppLogger(), Document);
-  public sheetCache = new CacheUtil(new AppLogger(), Sheet);
+  public docCache = new CacheUtil(AppLogger.instance, Document);
+  public sheetCache = new CacheUtil(AppLogger.instance, Sheet);
 }

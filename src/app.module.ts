@@ -63,6 +63,7 @@ import { GithubService } from './services/github.service';
   ],
   controllers: [UserController, ResController, ProjectController, SystemController],
   providers: [
+    AppLogger,
     JwtService,
     FileService,
     ImageService,
@@ -75,7 +76,6 @@ import { GithubService } from './services/github.service';
     DocumentRepository,
     NodeRepository,
     RelationshipRepository,
-    AppLogger,
     SocketService,
     GithubService,
   ],

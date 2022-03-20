@@ -26,7 +26,7 @@ export class GithubService implements OnModuleInit {
         owner: 'totodore',
         repo: 'doscienario',
         title: `Automatic client issue from user: ${user} ${content.split(" ").slice(0, 5).join(" ")}...`,
-        body: content + "\n\n" + clientLog,
+        body: content + "\n\n# Client Logs \n```" + clientLog + "\n```\n\n# Server Logs\n```" + await this.logger.getServerLogs() + "\n```",	
       });
       await this.octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/assignees', {
         owner: 'totodore',
