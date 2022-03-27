@@ -4,15 +4,20 @@ import { removeNodeFromTree } from "src/utils/tree-helpers.util";
 import { AppRepository } from "../app.repository";
 import { Blueprint } from "../blueprint/blueprint.entity";
 import { Node } from "./node.entity";
-import { EntityRepository } from 'typeorm';
+import { EntityRepository, getCustomRepository } from 'typeorm';
 
 @EntityRepository(Node)
 export class NodeRepository extends AppRepository<Node> {
-
+  
   constructor(
     @InjectRepository(RelationshipRepository)
-    private readonly _relRepo: RelationshipRepository,
-  ) { super() }
+    private readonly _relRepo: RelationshipRepository
+  ) {
+    super();
+    // Fix: Sometime relRepo is not injected
+    if (!(this._relRepo instanceof RelationshipRepository))
+      this._relRepo = getCustomRepository(RelationshipRepository);
+  }
 
   public getByBlueprintId(blueprintId: number): Promise<Node[]> {
     return this.find({ where: { blueprint: new Blueprint(blueprintId) } });
