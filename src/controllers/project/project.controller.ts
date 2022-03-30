@@ -73,10 +73,10 @@ export class ProjectController {
     const project = new Project(id);
     await this._socketManager.sheetCache.saveElements();
     await this._socketManager.docCache.saveElements();
-    for (const document of await Document.find({ project }))
-      await document.remove();
     for (const sheet of await Sheet.find({ project }))
       await sheet.remove();
+    for (const document of await Document.find({ project }))
+      await document.remove();
     for (const blueprint of await Blueprint.find({ project })) {
       await Node.delete({ blueprint });
       await Relationship.delete({ blueprint });
