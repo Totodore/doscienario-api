@@ -2,6 +2,12 @@ import { Blueprint } from '../blueprint/blueprint.entity';
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, RelationId } from "typeorm";
 import { AppEntity } from "../app.entity";
 
+export enum Pole {
+  North = "N",
+  South = "S",
+  East = "E",
+  West = "W"
+}
 @Entity()
 export class Relationship extends AppEntity {
   @PrimaryGeneratedColumn()
@@ -13,17 +19,11 @@ export class Relationship extends AppEntity {
   @Column()
   childId: number;
 
-  @Column()
-  ox: number;
+  @Column({ enum: Pole, type: "enum" })
+  parentPole: Pole;
 
-  @Column()
-  oy: number;
-
-  @Column()
-  ex: number;
-
-  @Column()
-  ey: number;
+  @Column({ enum: Pole, type: "enum" })
+  childPole: Pole;
 
   @ManyToOne(() => Blueprint)
   @JoinColumn()

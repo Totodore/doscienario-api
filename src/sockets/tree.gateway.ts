@@ -107,10 +107,8 @@ export class TreeGateway implements OnGatewayInit {
       parentId: packet.parentNode,
       childId: node.id,
       blueprint: new Blueprint(packet.blueprint),
-      ox: packet.ox,
-      oy: packet.oy + packet.relYOffset,
-      ex: packet.x,
-      ey: packet.y + packet.relYOffset
+      parentPole: packet.parentPole,
+      childPole: packet.childPole,
     });
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_NODE, new CreateNodeOut(node, userId));
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_RELATION, new CreateRelationOut(packet.blueprint, rel));
