@@ -39,3 +39,6 @@ data/**
 test.txt
 
 package-lock.json
+
+*.key
+*.key.pub

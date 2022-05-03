@@ -47,4 +47,36 @@ export class GithubService implements OnModuleInit {
     }
   }
 
+  public async getRelease(platform: "windows" | "linux", version: string): Promise<Release> {
+    const releases = await this.octokit.request('GET /repos/{owner}/{repo}/releases', {
+      owner: 'totodore',
+      repo: 'doscienario',
+    });
+    const release = releases.data.find(r => r.tag_name === `v${version}`);
+    if (!release) {
+      throw new Error("Release not found");
+    }
+    console.log(version, release);
+    const assets = release.assets.find(a => platform == "windows" ? a.name.endsWith(".msi") : a.name.endsWith(".deb"));
+    if (!assets) {
+      throw new Error("Asset not found");
+    }
+    return {
+      name: assets.name,
+      notes: release.body_text || release.body,
+      platform,
+      url: assets.browser_download_url,
+      version,
+      pub_date: release.published_at,
+    };
+  }
+}
+
+export type Release = {
+  version: string;
+  url: string;
+  platform: "windows" | "linux";
+  name: string;
+  notes: string;
+  pub_date: string;
 }
