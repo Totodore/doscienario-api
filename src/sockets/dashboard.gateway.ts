@@ -137,6 +137,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage(Flags.ADD_USER_PROJECT)
   public async addUserProject(@MessageBody() user: UserRes, @GetProject() projectId: string) {
+    this._logger.log("User:", user.name, "added to project:", projectId);
     const project = await Project.findOne(projectId, { relations: ["users"] });
     project.users.push(await User.findOne(user.id));
     await project.save();
@@ -144,7 +145,8 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage(Flags.REMOVE_USER_PROJECT)
-  public async removeUserProject(@MessageBody() user: UserRes, @GetUserId() userId: string, @GetProject() projectId: string) {
+  public async removeUserProject(@MessageBody() user: UserRes, @GetProject() projectId: string) {
+    this._logger.log("User:", user.name, "removed from project:", projectId);
     const project = await Project.findOne(projectId, { relations: ["users"] });
     project.users.slice(project.users.indexOf(await User.findOne(user.id)), 1);
     await project.save();
