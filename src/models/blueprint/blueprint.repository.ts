@@ -13,6 +13,7 @@ export class BlueprintRepository extends ElementRepository<Blueprint> {
     const node = await Node.create({ ...blueprint, blueprint, isRoot: true, x: 0, y: 0 }).save();
     blueprint.nodes = [node];
     blueprint.relationships = [];
+    await blueprint.save();
     return blueprint;
   }
 
