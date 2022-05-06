@@ -16,12 +16,6 @@ export class Blueprint extends ElementEntity implements IElementEntity {
   @JoinColumn()
   relationships: Relationship[];
 
-  @Column({ nullable: true })
-  x: number;
-
-  @Column({ nullable: true })
-  y: number;
-
   @ManyToMany(() => Tag, tag => tag.blueprints, { cascade: ["insert", "recover", "update"] })
   @JoinTable({
     name: "blueprint-tag",
