@@ -93,10 +93,10 @@ export class ProjectController {
     await this._socketManager.sheetCache.saveElements();
     await this._socketManager.docCache.saveElements();
     const project = await Project.findOne(id, { select: ["name", "id"]});
-    const docs = await Document.find({ where: { project }, relations: ["tags"], select: ["content", "title", "id"] });
+    const docs = await Document.find({ where: { project }, relations: ["tags"], select: ["content", "title", "id", "color"] });
     const tags = await Tag.find({ where: { project }, select: ["title", "id", "color"] });
     const images = await Image.find({ where: { project }, select: ["height", "width", "id", "size"] });
-    const blueprints = await Blueprint.find({ where: { project }, select: ["id", "title", "x", "y"], relations: ["tags", "nodes", "relationships"] });
+    const blueprints = await Blueprint.find({ where: { project }, select: ["id", "title", "color"], relations: ["tags", "nodes", "relationships"] });
     const sheets = await Sheet.find({ where: { project }, select: ["content", "id", "documentId", "title"] });
     // const files = await File.find({ where: { project }, select: ["mime", "path", "id"], relations: ["tags"]});
     const nodes: Node[] = blueprints.reduce((prev, curr) => {
