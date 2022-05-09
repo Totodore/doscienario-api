@@ -16,7 +16,7 @@ import { UserGuard } from 'src/guards/user.guard';
 import { UseGuards } from '@nestjs/common';
 import { CloseElementOut, OpenElementOut, SendElementOut } from './models/out/element.out';
 import { ColorElementIn, RenameElementIn } from './models/in/element.in';
-import { CreateNodeIn, EditSumarryIn, PlaceNodeIn, RemoveNodeIn } from './models/in/blueprint.in';
+import { CreateNodeIn, EditSumarryIn, PlaceNodeIn, RemoveNodeIn, ColorNodeIn } from './models/in/blueprint.in';
 import { AddTagElementOut } from './models/out/tag.model';
 import { AddTagElementIn, RemoveTagElementIn } from './models/in/tag.in';
 
@@ -90,6 +90,13 @@ export class TreeGateway implements OnGatewayInit {
     this._logger.log("Client color doc", body.elementId);
     await this._blueprintRepo.updateColor(body.elementId, body.color);
     client.broadcast.to("project-" + projectId).emit(Flags.COLOR_BLUEPRINT, body);
+  }
+
+  @SubscribeMessage(Flags.COLOR_NODE)
+  public async colorNode(@ConnectedSocket() client: Socket, @MessageBody() body: ColorNodeIn, @GetProject() projectId: string) {
+    this._logger.log("Client color node", body.elementId);
+    await this._nodeRepo.updateColor(body.elementId, body.color);
+    client.broadcast.to("blueprint-" + body.blueprintId).emit(Flags.COLOR_NODE, body);
   }
 
   @SubscribeMessage(Flags.CREATE_NODE)

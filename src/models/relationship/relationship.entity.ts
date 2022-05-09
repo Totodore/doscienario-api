@@ -8,6 +8,11 @@ export enum Pole {
   East = "E",
   West = "W"
 }
+
+export enum RelationshipType {
+  Direct = "direct",
+  Loopback = "loopback",
+}
 @Entity()
 export class Relationship extends AppEntity {
   @PrimaryGeneratedColumn()
@@ -24,6 +29,9 @@ export class Relationship extends AppEntity {
 
   @Column({ enum: Pole, type: "enum" })
   childPole: Pole;
+
+  @Column({ enum: RelationshipType, type: "enum", default: RelationshipType.Direct })
+  type: RelationshipType;
 
   @ManyToOne(() => Blueprint)
   @JoinColumn()

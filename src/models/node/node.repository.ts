@@ -27,6 +27,10 @@ export class NodeRepository extends AppRepository<Node> {
     await this.update({ id }, { x, y });
   }
 
+  public updateColor(id: number, color: string) {
+    return this.update({ id }, { color });
+  }
+
   public async removeById(nodeId: number) {
     const node = await this.getOne(nodeId);
     let nodes = await this.getByBlueprintId(node.blueprintId);

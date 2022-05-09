@@ -26,7 +26,7 @@ export class Node extends BaseEntity {
 
   @UpdateDateColumn()
   lastEditing: Date
-  
+
   @Column({ default: false })
   isRoot: boolean;
 
@@ -35,6 +35,9 @@ export class Node extends BaseEntity {
 
   @Column({ default: () => "false" })
   locked: boolean;
+
+  @Column("varchar", { length: 5, nullable: true })
+  color?: string;
 
   @Column("text", { nullable: true })
   summary: string;
