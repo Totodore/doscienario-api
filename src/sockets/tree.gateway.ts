@@ -16,7 +16,7 @@ import { UserGuard } from 'src/guards/user.guard';
 import { UseGuards } from '@nestjs/common';
 import { CloseElementOut, OpenElementOut, SendElementOut } from './models/out/element.out';
 import { ColorElementIn, RenameElementIn } from './models/in/element.in';
-import { CreateNodeIn, EditSumarryIn, PlaceNodeIn, RemoveNodeIn, ColorNodeIn } from './models/in/blueprint.in';
+import { CreateNodeIn, EditSumarryIn, PlaceNodeIn, RemoveNodeIn, ColorNodeIn, RemoveRelIn } from './models/in/blueprint.in';
 import { AddTagElementOut } from './models/out/tag.model';
 import { AddTagElementIn, RemoveTagElementIn } from './models/in/tag.in';
 
@@ -139,6 +139,16 @@ export class TreeGateway implements OnGatewayInit {
     this._logger.log("Remove node for", packet.nodeId);
     await this._nodeRepo.removeById(packet.nodeId);
     client.broadcast.to("blueprint-" + packet.blueprintId).emit(Flags.REMOVE_NODE, packet);
+  }
+
+  /**
+   * Remove relationship should only be used when needing to remove only one relation without any other node
+   */
+  @SubscribeMessage(Flags.REMOVE_RELATION)
+  public async removeRelation(@ConnectedSocket() client: Socket, @MessageBody() packet: RemoveRelIn) {
+    this._logger.log("Remove rel for", packet.relId);
+    await this._relRepo.removeById(packet.relId);
+    client.broadcast.to("blueprint-" + packet.blueprintId).emit(Flags.REMOVE_RELATION, packet);
   }
 
   @SubscribeMessage(Flags.CREATE_RELATION)

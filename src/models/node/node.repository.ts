@@ -37,11 +37,11 @@ export class NodeRepository extends AppRepository<Node> {
     let relations = await this._relRepo.getByBlueprintId(node.blueprintId);
     const treeData = removeNodeFromTree(
       nodeId,
-      nodes.filter(el => !el.isRoot).map(el => el.id),
-      relations.map(el => [el.parentId, el.childId, el.id])
+      nodes.filter(el => !el.isRoot),
+      relations
     );
-    await this._relRepo.delete(treeData.rels);
-    await this.delete(treeData.nodes);
+    await this._relRepo.delete(treeData.rels.map(el => el.id));
+    await this.delete(treeData.nodes.map(el => el.id));
     return node;
   }
 

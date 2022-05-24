@@ -41,6 +41,12 @@ export class RemoveNodeIn {
     public blueprintId: number
   ) {}
 }
+export class RemoveRelIn {
+  constructor(
+    public relId: number,
+    public blueprintId: number
+  ) { }
+}
 export class ColorNodeIn {
   constructor(
     public blueprintId: number,

@@ -36,7 +36,7 @@ export class Node extends BaseEntity {
   @Column({ default: () => "false" })
   locked: boolean;
 
-  @Column("varchar", { length: 5, nullable: true })
+  @Column("varchar", { length: 6, nullable: true })
   color?: string;
 
   @Column("text", { nullable: true })
