@@ -1,6 +1,6 @@
 import { DataType } from '../data-type.entity';
 import { Relationship } from '../relationship/relationship.entity';
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany } from "typeorm";
+import { Entity, JoinColumn, JoinTable, ManyToMany, OneToMany } from "typeorm";
 import { Node } from "../node/node.entity";
 import { Tag } from "../tag/tag.entity";
 import { ElementEntity, IElementEntity } from '../element/element.entity';

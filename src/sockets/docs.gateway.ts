@@ -1,6 +1,6 @@
 import { CursorDocumentIn } from './models/in/document.in';
 import { WriteElementIn, RenameElementIn, ColorElementIn } from './models/in/element.in';
-import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayInit, WsException } from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayInit } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Document } from 'src/models/document/document.entity';
 import { User } from 'src/models/user/user.entity';
