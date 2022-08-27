@@ -1,5 +1,4 @@
-#On part de la version 14.15 alpine de linux 
-FROM node:14.15-alpine as build
+FROM node:16-alpine as build
 #On se met dans la dir /build
 WORKDIR /build
 
@@ -32,7 +31,7 @@ RUN npm install
 RUN npm run build
 
 #Ensuite on part d'une autre image (différente)
-FROM node:14.15-alpine
+FROM node:16-alpine
 #On se met dans la dir app
 WORKDIR /app
 #On copie tout le contenu de /build vers /app
