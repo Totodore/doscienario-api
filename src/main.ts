@@ -1,3 +1,5 @@
+// IMPORTANT: need to be the first import
+import './config/aliases';
 
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';

@@ -829,6 +829,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/module-alias@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "@types/module-alias@npm:2.0.1"
+  checksum: c6d6d30605833b03465c39760df42616fd24e4f532a29bb77954220885feb21eb2d84dd38eed68b0c18997e6930fdc5914d2dc6fd7cc5d110a42068d2204e11e
+  languageName: node
+  linkType: hard
+
 "@types/multer@npm:^1.4.7":
   version: 1.4.7
   resolution: "@types/multer@npm:1.4.7"
@@ -2235,6 +2242,7 @@ __metadata:
     "@types/express": ^4.17.13
     "@types/fs-extra": ^9.0.13
     "@types/jsonwebtoken": ^8.5.9
+    "@types/module-alias": ^2.0.1
     "@types/multer": ^1.4.7
     "@types/node": ^16.11.7
     "@types/sharp": ^0.30.5
@@ -2250,6 +2258,7 @@ __metadata:
     eslint-config-prettier: 8.5.0
     eslint-plugin-prettier: ^4.2.1
     jsonwebtoken: ^8.5.1
+    module-alias: ^2.2.2
     mysql2: ^2.3.3
     node-blob: 0.0.2
     prettier: ^2.7.1
@@ -4059,6 +4068,13 @@ __metadata:
   bin:
     mkdirp: bin/cmd.js
   checksum: a96865108c6c3b1b8e1d5e9f11843de1e077e57737602de1b82030815f311be11f96f09cce59bd5b903d0b29834733e5313f9301e3ed6d6f6fba2eae0df4298f
+  languageName: node
+  linkType: hard
+
+"module-alias@npm:^2.2.2":
+  version: 2.2.2
+  resolution: "module-alias@npm:2.2.2"
+  checksum: 4b5543f834b484033e5bd184096ca8276b9195e32e88883ee6ea8d3a4789d97c470d26f5fa7271bd7a26588bf67e4d27dbdb594ee327aef1c9619d855dc78342
   languageName: node
   linkType: hard
 
