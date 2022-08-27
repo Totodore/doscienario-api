@@ -21,17 +21,17 @@ export class ResController {
     private readonly _files: FileService,
     private readonly _images: ImageService,
     private readonly _export: ExportService
-  ) {}
+  ) { }
 
   @Post("/file")
   @UseGuards(UserGuard)
   @UseInterceptors(FileInterceptor("file"))
   async addFile(@UploadedFile() file: Express.Multer.File, @Body() body: ResAddDto, @GetUserId() user: string): Promise<File> {
     const id = uuid.v4();
-    const mime = await this._files.writeFile(file.buffer, id);
+    await this._files.writeFile(file.buffer, id);
     return File.create({
       id,
-      mime,
+      mime: "",   //TODO: get mime type
       path: body.path,
       createdById: user,
       size: file.buffer.length,
@@ -56,7 +56,7 @@ export class ResController {
       }).save();
       return { url: `${process.env.ROOT_URL}/res/image/${id}` };
     } catch (error) {
-      return { error: { message: "Impossible d'envoyer l'image !"} };
+      return { error: { message: "Impossible d'envoyer l'image !" } };
     }
   }
 
@@ -75,10 +75,10 @@ export class ResController {
 
   @Get("/file/:id")
   @UseGuards(UserGuard)
-  async getFile(@Param("id") id: number, @Res() res: Response) {
+  async getFile(@Param("id") id: string, @Res() res: Response) {
     try {
-      const file = await File.findOne(id);
-      const buffer = this._files.getFile(file.path);
+      const file = await File.findOneBy({ id });
+      const buffer = await this._files.getFile(file.path);
       res.header('Content-Type', file.mime);
       res.header('Content-Length', buffer.length.toString());
       res.write(buffer, 'binary');
@@ -90,12 +90,12 @@ export class ResController {
 
   @Get("/exported-data/:id")
   @Header("Content-Type", "application/zip")
-  public getExportedData(@Param("id") id: string, @Res() res: Response) {
+  public async getExportedData(@Param("id") id: string, @Res() res: Response) {
     const buffer = this._export.getFile(id);
     res.header("Content-Length", buffer.length.toString());
     res.write(buffer, 'binary');
     res.end();
-    this._export.removeFile(id);
+    await this._export.removeFile(id);
   }
 
 }

@@ -25,7 +25,7 @@ import { Sheet } from 'src/models/sheet/sheet.entity';
 export class ProjectController {
 
   constructor(
-    private readonly _logger: AppLogger, 
+    private readonly _logger: AppLogger,
     private readonly _imageManager: ImageService,
     private readonly _exportManager: ExportService,
     private readonly _socketManager: SocketService,
@@ -33,7 +33,7 @@ export class ProjectController {
 
   @Post()
   async createProject(@Body() body: ProjectAddDto, @GetUser() user: User): Promise<Project> {
-    if (await Project.exists({ where: { name: body.name } }))
+    if (await Project.findOne({ where: { name: body.name } }))
       throw new BadRequestException();
     const project = Project.create({ name: body.name, createdBy: user });
     project.users = [user];
@@ -46,14 +46,14 @@ export class ProjectController {
     if (!project)
       throw new ForbiddenException;
     this._logger.log(JSON.stringify(project));
-    project = await Project.findOne(project.id, { relations: ["users"] });
-    project.users.push(await User.findOne(body.userId));
+    project = await Project.findOne({ where: { id: project.id }, relations: ["users"] });
+    project.users.push(await User.findOne({ where: { id: body.userId } }));
     return await project.save();
   }
 
   @Get("/:id")
   async getProject(@Param("id") id: number, @GetUser({ joinProjects: true }) user: User): Promise<Project> {
-    return createQueryBuilder(Project, 'project')
+    return Project.createQueryBuilder('project')
       .where('project.id = :id', { id, user })
       .leftJoinAndSelect('project.users', 'user')
       .leftJoinAndSelect('project.createdBy', 'createdBy')
@@ -73,17 +73,17 @@ export class ProjectController {
     const project = new Project(id);
     await this._socketManager.sheetCache.saveElements();
     await this._socketManager.docCache.saveElements();
-    for (const sheet of await Sheet.find({ project }))
+    for (const sheet of await Sheet.findBy({ project: { id: project.id } }))
       await sheet.remove();
-    for (const document of await Document.find({ project }))
+    for (const document of await Document.findBy({ project: { id: project.id } }))
       await document.remove();
-    for (const blueprint of await Blueprint.find({ project })) {
-      await Node.delete({ blueprint });
-      await Relationship.delete({ blueprint });
+    for (const blueprint of await Blueprint.findBy({ project: { id: project.id } })) {
+      await Node.delete({ blueprint: { id: blueprint.id } });
+      await Relationship.delete({ blueprint: { id: blueprint.id } });
       await blueprint.remove();
     }
-    await Tag.delete({ project });
-    await Image.delete({ project });
+    await Tag.delete({ project: { id: project.id } });
+    await Image.delete({ project: { id: project.id } });
     await Project.delete({ id });
   }
 
@@ -92,13 +92,13 @@ export class ProjectController {
     this._logger.log("Exporting project", id);
     await this._socketManager.sheetCache.saveElements();
     await this._socketManager.docCache.saveElements();
-    const project = await Project.findOne(id, { select: ["name", "id"]});
-    const docs = await Document.find({ where: { project }, relations: ["tags"], select: ["content", "title", "id", "color"] });
-    const tags = await Tag.find({ where: { project }, select: ["title", "id", "color"] });
-    const images = await Image.find({ where: { project }, select: ["height", "width", "id", "size"] });
-    const blueprints = await Blueprint.find({ where: { project }, select: ["id", "title", "color"], relations: ["tags", "nodes", "relationships"] });
-    const sheets = await Sheet.find({ where: { project }, select: ["content", "id", "documentId", "title"] });
-    // const files = await File.find({ where: { project }, select: ["mime", "path", "id"], relations: ["tags"]});
+    const project = await Project.findOne({ where: { id }, select: ["name", "id"] });
+    const docs = await Document.find({ where: { project: { id: project.id } }, relations: ["tags"], select: ["content", "title", "id", "color"] });
+    const tags = await Tag.find({ where: { project: { id: project.id } }, select: ["title", "id", "color"] });
+    const images = await Image.find({ where: { project: { id: project.id } }, select: ["height", "width", "id", "size"] });
+    const blueprints = await Blueprint.find({ where: { project: { id: project.id } }, select: ["id", "title", "color"], relations: ["tags", "nodes", "relationships"] });
+    const sheets = await Sheet.find({ where: { project: { id: project.id } }, select: ["content", "id", "documentId", "title"] });
+    // const files = await File.find({ where: { project: { id: project.id } }, select: ["mime", "path", "id"], relations: ["tags"]});
     const nodes: Node[] = blueprints.reduce((prev, curr) => {
       const nodes = curr.nodes;
       delete curr.nodes;
@@ -109,7 +109,7 @@ export class ProjectController {
       delete curr.relationships;
       return [...prev, ...rels];
     }, []);
-  
+
     const zip = new AdmZip();
     zip.addFile("docs.json", Buffer.from(JSON.stringify(docs), "utf-8"));
     zip.addFile("tags.json", Buffer.from(JSON.stringify(tags), "utf-8"));
@@ -125,12 +125,12 @@ export class ProjectController {
       zip.addFile(`data/images/${image.id}`, this._imageManager.getImage(image.id), "image_dir");
     // for (const file of files)
     //   zip.addFile(`data/files/${file.id}`, this._fileManager.getFile(file.id), "file_dir");
-    
+
     const fileId = uuid();
     await this._exportManager.writeFile(zip.toBuffer(), fileId);
     return { id: fileId };
   }
-  
+
   @Post("/import")
   @UseGuards(UserGuard)
   @UseInterceptors(FileInterceptor("data"))
@@ -152,8 +152,8 @@ export class ProjectController {
     // Import all images
     this._logger.log("1 - Import image into Database");
     for (const img of images)
-      await Image.create({...img, project: new Project(projectId)}).save();
-    
+      await Image.create({ ...img, project: new Project(projectId) }).save();
+
     /**
      * Create a tag map for corresponding new id to old id 
      */
@@ -167,7 +167,7 @@ export class ProjectController {
         project: new Project(projectId),
       }).save());
     }
-    
+
     /** 
      * Create docs with the new tag list for the docs 
      */
@@ -183,7 +183,7 @@ export class ProjectController {
         tags: doc.tags?.map(oldTag => tagMap.get(oldTag.id))
       }).save());
     }
-    
+
     /**
      * Create sheets and map ids + docs
      */
@@ -196,7 +196,7 @@ export class ProjectController {
       lastEditor: user,
       project: new Project(projectId),
     }))).execute();
-    
+
     /** 
      * Create Blueprints and map the new ids 
      */

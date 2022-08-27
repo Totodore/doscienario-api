@@ -7,7 +7,7 @@ import { Relationship } from "../relationship/relationship.entity";
 @EntityRepository(Blueprint)
 export class BlueprintRepository extends ElementRepository<Blueprint> {
 
-  
+
   public async post(data: DeepPartial<Blueprint>) {
     const blueprint = await super.post(data);
     const node = await Node.create({ ...blueprint, blueprint, isRoot: true, x: 0, y: 0 }).save();
@@ -18,8 +18,8 @@ export class BlueprintRepository extends ElementRepository<Blueprint> {
   }
 
   public async removeById(id: number) {
-    await Node.delete({ blueprint: new Blueprint(id) });
-    await Relationship.delete({ blueprint: new Blueprint(id) });
-    return await (await Blueprint.findOne(id)).remove();
+    await Node.delete({ blueprintId: id });
+    await Relationship.delete({ blueprintId: id });
+    return await (await Blueprint.findOneBy({ id })).remove();
   }
 }

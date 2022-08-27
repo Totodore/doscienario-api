@@ -48,7 +48,7 @@ export abstract class ElementEntity extends AppEntity {
     this.uid ??= uuid();
   }
 }
-export abstract class ContentElementEntity extends ElementEntity {
+export class ContentElementEntity extends ElementEntity {
 
   @Column("text", { select: false, nullable: true })
   content: string;

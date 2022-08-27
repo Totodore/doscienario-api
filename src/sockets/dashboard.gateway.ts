@@ -6,7 +6,6 @@ import { Tag } from 'src/models/tag/tag.entity';
 import { User } from 'src/models/user/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';
 import { Flags } from './flags.enum';
-import { createQueryBuilder } from 'typeorm';
 import { GetUserId } from 'src/decorators/user.decorator';
 import { GetProject } from 'src/decorators/project.decorator';
 import { UseGuards } from '@nestjs/common';
@@ -48,10 +47,10 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage(Flags.CREATE_TAG)
-  public async createTag(@MessageBody() tag: Tag, @GetUserId() userId: string, @GetProject() projectId: string) {
+  public async createTag(@MessageBody() tag: Tag, @GetUserId() userId: string, @GetProject() projectId: number) {
     this._logger.log("Client create tag", tag);
 
-    if (await Tag.exists<Tag>({ where: { project: new Project(projectId), title: tag.title.toLowerCase() } }))
+    if (await Tag.count<Tag>({ where: { projectId, title: tag.title.toLowerCase() } }))
       throw new WsException("Tag already exist");
 
     tag = await Tag.create({ createdBy: new User(userId), project: new Project(projectId), ...tag, color: tag.color }).save();
@@ -59,30 +58,30 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage(Flags.REMOVE_TAG)
-  public async removeTag(@ConnectedSocket() client: Socket, @MessageBody() tagName: string, @GetProject() projectId: string) {
+  public async removeTag(@ConnectedSocket() client: Socket, @MessageBody() tagName: string, @GetProject() projectId: number) {
     this._logger.log("Client remove tag");
-    await (await Tag.findOne({ where: { title: tagName, project: new Project(projectId) } })).remove();
+    await (await Tag.findOne({ where: { title: tagName, projectId } })).remove();
     client.broadcast.to("project-"+projectId).emit(Flags.REMOVE_TAG, tagName);
   }
 
   @SubscribeMessage(Flags.RENAME_TAG)
-  public async updateTag(@ConnectedSocket() client: Socket, @MessageBody() body: RenameTagIn, @GetProject() projectId: string) {
+  public async updateTag(@ConnectedSocket() client: Socket, @MessageBody() body: RenameTagIn, @GetProject() projectId: number) {
     this._logger.log("Client rename tag");
 
-    await createQueryBuilder(Tag).update()
+    await Tag.createQueryBuilder().update()
       .set({ title: body.title })
-      .where({ title: body.oldTitle, project: new Project(projectId) })
+      .where({ title: body.oldTitle, projectId })
       .execute();
     client.broadcast.to("project-"+projectId).emit(Flags.RENAME_TAG, body);
   }
 
   @SubscribeMessage(Flags.COLOR_TAG)
-  public async colorTag(@ConnectedSocket() client: Socket, @MessageBody() body: ColorTagIn, @GetProject() projectId: string) {
+  public async colorTag(@ConnectedSocket() client: Socket, @MessageBody() body: ColorTagIn, @GetProject() projectId: number) {
     this._logger.log("Client update color tag");
 
-    await createQueryBuilder(Tag).update()
+    await Tag.createQueryBuilder().update()
       .set({ color: body.color.replace("#", "") })
-      .where({ title: body.title, project: new Project(projectId) })
+      .where({ title: body.title, projectId })
       .execute();
     client.broadcast.to("project-"+projectId).emit(Flags.COLOR_TAG, body);
   }
@@ -136,19 +135,19 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage(Flags.ADD_USER_PROJECT)
-  public async addUserProject(@MessageBody() user: UserRes, @GetProject() projectId: string) {
+  public async addUserProject(@MessageBody() user: UserRes, @GetProject() projectId: number) {
     this._logger.log("User:", user.name, "added to project:", projectId);
-    const project = await Project.findOne(projectId, { relations: ["users"] });
-    project.users.push(await User.findOne(user.id));
+    const project = await Project.findOne({ where: { id: projectId }, relations: ["users"] });
+    project.users.push(await User.findOneBy({ id: user.id }));
     await project.save();
     this.server.to("project-"+projectId).emit(Flags.ADD_USER_PROJECT, user);
   }
 
   @SubscribeMessage(Flags.REMOVE_USER_PROJECT)
-  public async removeUserProject(@MessageBody() user: UserRes, @GetProject() projectId: string) {
+  public async removeUserProject(@MessageBody() user: UserRes, @GetProject() projectId: number) {
     this._logger.log("User:", user.name, "removed from project:", projectId);
-    const project = await Project.findOne(projectId, { relations: ["users"] });
-    project.users.slice(project.users.indexOf(await User.findOne(user.id)), 1);
+    const project = await Project.findOne({ where: { id: projectId }, relations: ["users"] });
+    project.users.slice(project.users.indexOf(await User.findOneBy({ id: user.id })), 1);
     await project.save();
     this.server.to("project-"+projectId).emit(Flags.REMOVE_USER_PROJECT, user);
   }

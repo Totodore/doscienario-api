@@ -13,14 +13,14 @@ export class NodeRepository extends AppRepository<Node> {
     @InjectRepository(RelationshipRepository)
     private readonly _relRepo: RelationshipRepository
   ) {
-    super();
+    super(null, null, null);
     // Fix: Sometime relRepo is not injected
     if (!(this._relRepo instanceof RelationshipRepository))
       this._relRepo = getCustomRepository(RelationshipRepository);
   }
 
   public getByBlueprintId(blueprintId: number): Promise<Node[]> {
-    return this.find({ where: { blueprint: new Blueprint(blueprintId) } });
+    return this.find({ where: { blueprintId } });
   }
 
   public async placeNode(id: number, [x, y]: [number, number]) {

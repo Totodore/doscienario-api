@@ -10,13 +10,13 @@ export abstract class AppEntity extends BaseEntity implements PrimaryColumn {
 
   id: string | number;
 
-  public static async findOneOrCreate<T extends AppEntity>(options: FindOneOptions<T>, entityLike?: DeepPartial<T>): Promise<T> {
-    return await this.findOne<T>(options) ?? this.create<T>(entityLike).save()
-  }
+  // public static async findOneOrCreate<T extends typeof AppEntity>(options: FindOneOptions<T>, entityLike?: DeepPartial<T>): Promise<T> {
+  //   return await this.findOne<T>(options) ?? this.create<T>(entityLike).save()
+  // }
 
-  public static async exists<T extends AppEntity>(options: FindOneOptions<T>): Promise<boolean> {
-    return (await this.findOne<T>(options)) != null;
-  }
+  // public static async exists<T extends AppEntity>(options: FindOneOptions<T>): Promise<boolean> {
+  //   return (await (this as typeof AppEntity).findOne<T>(options)) != null;
+  // }
 }
 
 export interface PrimaryColumn {

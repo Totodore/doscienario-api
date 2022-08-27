@@ -7,6 +7,6 @@ import { Relationship } from "./relationship.entity";
 export class RelationshipRepository extends AppRepository<Relationship> {
 
   public getByBlueprintId(blueprintId: number): Promise<Relationship[]> {
-    return this.find({ where: { blueprint: new Blueprint(blueprintId) } });
+    return this.find({ where: { blueprintId } });
   }
 }

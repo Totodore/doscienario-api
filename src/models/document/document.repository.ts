@@ -20,7 +20,7 @@ export class DocumentRepository extends ElementRepository<Document> {
   }
 
   public async removeById(id: number) {
-    await Sheet.delete({ document: new Document(id) });
+    await Sheet.delete({ documentId: id });
     return await super.removeById(id);
   }
 }

@@ -1,10 +1,12 @@
-import { DeepPartial, Repository } from "typeorm";
+import { DeepPartial, FindOptionsWhere, Repository } from "typeorm";
 import { AppEntity } from "./app.entity";
 
 export abstract class AppRepository<T extends AppEntity> extends Repository<T> {
 
   public async getOne(id: number, relations: string[] = [], select?: (keyof T)[]): Promise<T> {
-    return this.findOne(id, {
+    const where = { id } as FindOptionsWhere<T> //TODO: patched due to typeorm bug(https://github.com/typeorm/typeorm/issues/9281);
+    return this.findOne({
+      where,
       relations,
       select
     });
