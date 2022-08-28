@@ -1475,15 +1475,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"atob@npm:^2.1.2":
-  version: 2.1.2
-  resolution: "atob@npm:2.1.2"
-  bin:
-    atob: bin/atob.js
-  checksum: dfeeeb70090c5ebea7be4b9f787f866686c645d9f39a0d184c817252d0cf08455ed25267d79c03254d3be1f03ac399992a792edcd5ffb9c91e097ab5ef42833a
-  languageName: node
-  linkType: hard
-
 "balanced-match@npm:^1.0.0":
   version: 1.0.2
   resolution: "balanced-match@npm:1.0.2"
@@ -2250,7 +2241,6 @@ __metadata:
     "@typescript-eslint/eslint-plugin": ^5.35.1
     "@typescript-eslint/parser": ^5.35.1
     adm-zip: ^0.5.9
-    atob: ^2.1.2
     bcrypt: ^5.0.1
     class-transformer: ^0.3.2
     class-validator: ^0.13.2
@@ -2260,7 +2250,6 @@ __metadata:
     jsonwebtoken: ^8.5.1
     module-alias: ^2.2.2
     mysql2: ^2.3.3
-    node-blob: 0.0.2
     prettier: ^2.7.1
     reflect-metadata: ^0.1.13
     rimraf: ^3.0.2
@@ -4216,13 +4205,6 @@ __metadata:
   dependencies:
     node-gyp: latest
   checksum: 7c5e2043ac37f6108784d94ed73a44ae6d3e68eb968de60680922fc6bc3d17fa69448c0feb4e0c9d3f4c74a0324822e566a8340a56916d9d6f23cb3e85620334
-  languageName: node
-  linkType: hard
-
-"node-blob@npm:0.0.2":
-  version: 0.0.2
-  resolution: "node-blob@npm:0.0.2"
-  checksum: dff4001e20c2d14c9d57602b84e546d56e5baa86b12f54549695acbe673d5a90605715514bbf7ffca0f2ed7b913271da3af840d274a7c56a749f05f40f119634
   languageName: node
   linkType: hard
 

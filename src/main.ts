@@ -5,8 +5,6 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
-global.atob = require("atob");
-global.Blob = require("node-blob");
 
 String.prototype.insert = function (index: number, what: string) {
   return index > 0
