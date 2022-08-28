@@ -5,7 +5,7 @@ WORKDIR /build
 #Add packages to build Canvas, Webp and MozJPEG
 #On ajoute pleins de packets nécessaires au build de l'application
 RUN apk add --no-cache \
-    python \
+    python3 \
     g++ \
     build-base \
     cairo-dev \
