@@ -17,25 +17,21 @@ import { CloseElementOut, ElementStore, OpenElementOut, SendElementOut, WriteEle
 import { CursorDocumentOut } from './models/out/document.out';
 import { AddTagElementIn, RemoveTagElementIn } from './models/in/tag.in';
 import { AddTagElementOut } from './models/out/tag.model';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @WebSocketGateway({ path: "/dash", cors: true })
 @UseGuards(UserGuard)
-export class DocsGateway implements OnGatewayInit {
+export class DocsGateway {
 
   @WebSocketServer() server: Server;
 
-  private _documentRepo: DocumentRepository;
 
   constructor(
     private readonly _logger: AppLogger,
     private readonly _socketService: SocketService,
+    @InjectRepository(DocumentRepository)
+    private readonly _documentRepo: DocumentRepository,
   ) { }
-
-  public afterInit(_server: Server) {
-    this._documentRepo = getCustomRepository(DocumentRepository);
-  }
-
-
 
   /**
    * Triggered when someone open a doc, everyone in the projec is triggered

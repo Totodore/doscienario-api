@@ -1,23 +1,16 @@
-import { RelationshipRepository } from './../relationship/relationship.repository';
-import { InjectRepository } from "@nestjs/typeorm";
-import { removeNodeFromTree } from "src/utils/tree-helpers.util";
+import { OnModuleInit, OnApplicationBootstrap } from '@nestjs/common';
+import { BlueprintRepository } from './../blueprint/blueprint.repository';
 import { AppRepository } from "../app.repository";
-import { Blueprint } from "../blueprint/blueprint.entity";
 import { Node } from "./node.entity";
-import { EntityRepository, getCustomRepository } from 'typeorm';
+import { CustomRepository, LoadCustomRepository } from '@src/config/database/typeorm-ex.decorators';
+import { RelationshipRepository } from '../relationship/relationship.repository';
+import { removeNodeFromTree } from '@src/utils/tree-helpers.util';
 
-@EntityRepository(Node)
+@CustomRepository(Node)
 export class NodeRepository extends AppRepository<Node> {
   
-  constructor(
-    @InjectRepository(RelationshipRepository)
-    private readonly _relRepo: RelationshipRepository
-  ) {
-    super(null, null, null);
-    // Fix: Sometime relRepo is not injected
-    if (!(this._relRepo instanceof RelationshipRepository))
-      this._relRepo = getCustomRepository(RelationshipRepository);
-  }
+  @LoadCustomRepository()
+  private readonly _relRepo: RelationshipRepository;
 
   public getByBlueprintId(blueprintId: number): Promise<Node[]> {
     return this.find({ where: { blueprintId } });

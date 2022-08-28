@@ -1,8 +1,8 @@
-import { EntityRepository } from "typeorm";
+import { CustomRepository } from "@src/config/database/typeorm-ex.decorators";
 import { ElementRepository } from "../element/element.repository";
 import { Sheet } from "./sheet.entity";
 
-@EntityRepository(Sheet)
+@CustomRepository(Sheet)
 export class SheetRepository extends ElementRepository<Sheet> {
   
   public updateContent(id: number, content: string) {

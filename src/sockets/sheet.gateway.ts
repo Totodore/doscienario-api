@@ -3,11 +3,10 @@ import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSo
 import { Server, Socket } from 'socket.io';
 import { User } from 'src/models/user/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';
-import { getCustomRepository } from 'typeorm';
 import { GetProject } from 'src/decorators/project.decorator';
 import { GetUserId } from 'src/decorators/user.decorator';
 import { UserGuard } from 'src/guards/user.guard';
-import { UseGuards } from '@nestjs/common';
+import { OnApplicationBootstrap, UseGuards } from '@nestjs/common';
 import { SocketService } from 'src/services/socket.service';
 import { SheetRepository } from 'src/models/sheet/sheet.repository';
 import { Sheet } from 'src/models/sheet/sheet.entity';
@@ -15,25 +14,20 @@ import { Flags } from './flags.enum';
 import { CloseElementOut, ElementStore, OpenElementOut, SendElementOut, WriteElementOut } from './models/out/element.out';
 import { Document } from 'src/models/document/document.entity';
 import { OpenSheetIn } from './models/in/sheet.in';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @WebSocketGateway({ path: "/dash", cors: true })
 @UseGuards(UserGuard)
-export class SheetGateway implements OnGatewayInit {
+export class SheetGateway {
 
   @WebSocketServer() server: Server;
-
-  private _sheetRepo: SheetRepository;
 
   constructor(
     private readonly _logger: AppLogger,
     private readonly _socketService: SocketService,
+    @InjectRepository(SheetRepository)
+    private readonly _sheetRepo: SheetRepository,
   ) { }
-
-  public afterInit(_server: Server) {
-    this._sheetRepo = getCustomRepository(SheetRepository);
-  }
-
-
 
   /**
    * Triggered when someone open a element, everyone in the projec is triggered

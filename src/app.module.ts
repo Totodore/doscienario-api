@@ -1,3 +1,4 @@
+import { TypeOrmExModule } from './config/database/typeorm-ex.module';
 import { Logs } from './models/logs/logs.entity';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -32,6 +33,8 @@ import { SocketService } from './services/socket.service';
 import { SheetGateway } from './sockets/sheet.gateway';
 import { SystemController } from './controllers/system/system.controller';
 import { GithubService } from './services/github.service';
+import { SheetRepository } from './models/sheet/sheet.repository';
+import { ConfigurableModuleClass } from '@nestjs/common/cache/cache.module-definition';
 
 @Module({
   imports: [
@@ -60,6 +63,13 @@ import { GithubService } from './services/github.service';
       logging: ["error"],
       // logging: true,
     }),
+    TypeOrmExModule.forCustomRepository([
+      NodeRepository, 
+      BlueprintRepository,
+      DocumentRepository,
+      RelationshipRepository,
+      SheetRepository,
+    ]),
   ],
   controllers: [UserController, ResController, ProjectController, SystemController],
   providers: [
@@ -72,12 +82,16 @@ import { GithubService } from './services/github.service';
     TreeGateway,
     SheetGateway,
     ExportService,
-    BlueprintRepository,
-    DocumentRepository,
-    NodeRepository,
-    RelationshipRepository,
     SocketService,
     GithubService,
   ],
 })
-export class AppModule { }
+export class AppModule extends ConfigurableModuleClass { 
+
+  static register(config: any) {
+    console.log(config);
+    return {
+      ...super.register(config),
+    }
+  }
+}

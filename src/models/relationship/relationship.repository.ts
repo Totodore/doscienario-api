@@ -1,9 +1,8 @@
-import { EntityRepository } from "typeorm";
+import { CustomRepository } from "@src/config/database/typeorm-ex.decorators";
 import { AppRepository } from "../app.repository";
-import { Blueprint } from "../blueprint/blueprint.entity";
 import { Relationship } from "./relationship.entity";
 
-@EntityRepository(Relationship)
+@CustomRepository(Relationship)
 export class RelationshipRepository extends AppRepository<Relationship> {
 
   public getByBlueprintId(blueprintId: number): Promise<Relationship[]> {

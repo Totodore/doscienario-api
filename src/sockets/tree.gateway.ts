@@ -8,7 +8,6 @@ import { Server, Socket } from 'socket.io';
 import { User } from 'src/models/user/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';
 import { Flags } from './flags.enum';
-import { getCustomRepository } from 'typeorm';
 import { GetProject } from 'src/decorators/project.decorator';
 import { GetUserId } from 'src/decorators/user.decorator';
 import { BlueprintRepository } from 'src/models/blueprint/blueprint.repository';
@@ -19,27 +18,24 @@ import { ColorElementIn, RenameElementIn } from './models/in/element.in';
 import { CreateNodeIn, EditSumarryIn, PlaceNodeIn, RemoveNodeIn, ColorNodeIn, RemoveRelIn } from './models/in/blueprint.in';
 import { AddTagElementOut } from './models/out/tag.model';
 import { AddTagElementIn, RemoveTagElementIn } from './models/in/tag.in';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @WebSocketGateway({ path: "/dash", cors: true })
 @UseGuards(UserGuard)
-export class TreeGateway implements OnGatewayInit {
+export class TreeGateway {
 
   @WebSocketServer() server: Server;
   
-  public _blueprintRepo: BlueprintRepository;
-  public _nodeRepo: NodeRepository;
-  public _relRepo: RelationshipRepository;
-
   constructor(
     private readonly _logger: AppLogger,
-  ) { }
+    @InjectRepository(NodeRepository)
+    private readonly _nodeRepo: NodeRepository,
+    @InjectRepository(RelationshipRepository)
+    private readonly _relRepo: RelationshipRepository,
+    @InjectRepository(BlueprintRepository)
+    private readonly _blueprintRepo: BlueprintRepository,
+  ) {  }
   
-  public afterInit(_server: Server) {
-    this._blueprintRepo = getCustomRepository(BlueprintRepository);
-    this._nodeRepo = getCustomRepository(NodeRepository);
-    this._relRepo = getCustomRepository(RelationshipRepository);
-  }
-
   @SubscribeMessage(Flags.OPEN_BLUEPRINT)
   public async openBlueprint(@ConnectedSocket() client: Socket, @MessageBody() [reqId, docId]: [string, number?], @GetProject() projectId: number, @GetUserId() userId: string) {
     let blueprint: Blueprint;

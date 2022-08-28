@@ -1,9 +1,9 @@
-import { EntityRepository } from "typeorm";
+import { CustomRepository } from "@src/config/database/typeorm-ex.decorators";
 import { ElementRepository } from "../element/element.repository";
 import { Sheet } from "../sheet/sheet.entity";
 import { Document } from "./document.entity";
 
-@EntityRepository(Document)
+@CustomRepository(Document)
 export class DocumentRepository extends ElementRepository<Document> {
 
   public async getOne(id: number) {
