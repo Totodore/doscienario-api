@@ -1,4 +1,4 @@
-import { BaseEntity, DeepPartial, FindOneOptions } from 'typeorm';
+import { BaseEntity } from 'typeorm';
 
 export abstract class AppEntity extends BaseEntity implements PrimaryColumn {
 

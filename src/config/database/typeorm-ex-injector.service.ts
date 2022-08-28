@@ -1,4 +1,4 @@
-import { ClassProvider, Injectable, OnModuleInit, Type } from "@nestjs/common";
+import { ClassProvider, Injectable, OnModuleInit } from "@nestjs/common";
 import { ModuleRef } from "@nestjs/core";
 import { Repository } from "typeorm";
 import { TYPEORM_EX_LOAD_CUSTOM_REPO } from "./typeorm-ex.decorators";

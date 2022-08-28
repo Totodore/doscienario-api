@@ -1,4 +1,4 @@
-import { DeepPartial, Repository } from "typeorm";
+import { DeepPartial } from "typeorm";
 import { ElementRepository } from "../element/element.repository";
 import { Blueprint } from "./blueprint.entity";
 import { Node } from "../node/node.entity";

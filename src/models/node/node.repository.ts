@@ -1,5 +1,4 @@
-import { OnModuleInit, OnApplicationBootstrap } from '@nestjs/common';
-import { BlueprintRepository } from './../blueprint/blueprint.repository';
+
 import { AppRepository } from "../app.repository";
 import { Node } from "./node.entity";
 import { CustomRepository, LoadCustomRepository } from '@src/config/database/typeorm-ex.decorators';

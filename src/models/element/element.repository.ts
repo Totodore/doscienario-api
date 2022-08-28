@@ -4,7 +4,7 @@ import { IElementEntity } from "./element.entity";
 import { Project } from "../project/project.entity";
 import { Tag } from "../tag/tag.entity";
 import { User } from "../user/user.entity";
-import { FindOptionsWhere, FindOptionsWhereProperty } from "typeorm";
+import { FindOptionsWhere } from "typeorm";
 
 export abstract class ElementRepository<T extends IElementEntity> extends AppRepository<T> {
 

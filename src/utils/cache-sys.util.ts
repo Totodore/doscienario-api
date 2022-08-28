@@ -2,7 +2,6 @@ import { WriteElementIn } from './../sockets/models/in/element.in';
 import { AppLogger } from './../utils/app-logger.util';
 import { ContentElementEntity } from 'src/models/element/element.entity';
 import { Change, ElementStore } from 'src/sockets/models/out/element.out';
-import { BaseEntity } from 'typeorm';
 
 export class CacheUtil {
 

@@ -3,7 +3,7 @@ import { RelationshipRepository } from './../models/relationship/relationship.re
 import { NodeRepository } from './../models/node/node.repository';
 import { Relationship } from '../models/relationship/relationship.entity';
 import { Blueprint } from '../models/blueprint/blueprint.entity';
-import { ConnectedSocket, MessageBody, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { User } from 'src/models/user/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';

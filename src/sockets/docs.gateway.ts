@@ -1,12 +1,11 @@
 import { CursorDocumentIn } from './models/in/document.in';
 import { WriteElementIn, RenameElementIn, ColorElementIn } from './models/in/element.in';
-import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayInit } from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Document } from 'src/models/document/document.entity';
 import { User } from 'src/models/user/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';
 import { Flags } from './flags.enum';
-import { getCustomRepository } from 'typeorm';
 import { GetProject } from 'src/decorators/project.decorator';
 import { GetUserId } from 'src/decorators/user.decorator';
 import { DocumentRepository } from 'src/models/document/document.repository';

@@ -1,12 +1,12 @@
 import { WriteElementIn, RenameElementIn } from './models/in/element.in';
-import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayInit } from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { User } from 'src/models/user/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';
 import { GetProject } from 'src/decorators/project.decorator';
 import { GetUserId } from 'src/decorators/user.decorator';
 import { UserGuard } from 'src/guards/user.guard';
-import { OnApplicationBootstrap, UseGuards } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import { SocketService } from 'src/services/socket.service';
 import { SheetRepository } from 'src/models/sheet/sheet.repository';
 import { Sheet } from 'src/models/sheet/sheet.entity';
