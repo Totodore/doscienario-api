@@ -5,6 +5,7 @@ on:
     # Publish `master` as Docker `latest` image.
     branches:
       - master
+      - develop
 
     # Publish `v1.2.3` tags as releases.
     tags:
@@ -50,3 +51,11 @@ jobs:
           echo VERSION=$VERSION
           docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
+  # Only for dev branch
+  deploy:
+    needs: push
+    name: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy docker container webhook
+        run: echo $(wget -O - ${{ secrets.DEPLOY_WEBHOOK_URL }} > /dev/null)
