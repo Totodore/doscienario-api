@@ -1,6 +1,7 @@
 export enum Flags {
   OPEN_DOC = "OPEN_DOC",
   SEND_DOC = "SEND_DOC",
+  CRC_DOC = "CRC_DOC",
   CLOSE_DOC = "CLOSE_DOC",
   WRITE_DOC = "WRITE_DOC",
   CURSOR_DOC = "CURSOR_DOC",

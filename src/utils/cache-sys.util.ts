@@ -2,6 +2,7 @@ import { WriteElementIn } from './../sockets/models/in/element.in';
 import { AppLogger } from './../utils/app-logger.util';
 import { ContentElementEntity } from 'src/models/element/element.entity';
 import { Change, ElementStore } from 'src/sockets/models/out/element.out';
+import crc32 from 'crc/calculators/crc32';
 
 export class CacheUtil {
 
@@ -22,6 +23,9 @@ export class CacheUtil {
     }
     const elementEl = this.elements.find(el => el.elementId == element.elementId);
     return [elementEl.elementId, elementEl.content];
+  }
+  public checkCRC(id: number, crc: number): boolean {
+    return crc == crc32(Buffer.from(this.elements.find(el => el.elementId == id).content));
   }
   public async unregisterElement(id: number, all = false) {
     if (!all) {

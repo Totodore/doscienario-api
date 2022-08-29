@@ -2054,6 +2054,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"crc@npm:^4.1.1":
+  version: 4.1.1
+  resolution: "crc@npm:4.1.1"
+  peerDependencies:
+    buffer: ">=6.0.3"
+  checksum: b2ab89547bd47ac8bdaadcd362d94aa9ddda2ddfe7267e0b449f62a83739bd8f99e9874e4933652d5653ab5f9703eebba9665d03206d600cef2ded9ff3c5c1e2
+  languageName: node
+  linkType: hard
+
 "create-require@npm:^1.1.0":
   version: 1.1.1
   resolution: "create-require@npm:1.1.1"
@@ -2244,6 +2253,7 @@ __metadata:
     bcrypt: ^5.0.1
     class-transformer: ^0.3.2
     class-validator: ^0.13.2
+    crc: ^4.1.1
     eslint: ^8.23.0
     eslint-config-prettier: 8.5.0
     eslint-plugin-prettier: ^4.2.1

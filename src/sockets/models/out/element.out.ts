@@ -50,3 +50,11 @@ export class CloseElementOut {
     public elementId: number
   ) {}
 }
+
+export class CheckElementCRCOut {
+  constructor(
+    public elId: number,
+    public crc: number,
+    public isValid: boolean,
+  ) { }
+}

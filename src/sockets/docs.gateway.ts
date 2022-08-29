@@ -1,5 +1,5 @@
 import { CursorDocumentIn } from './models/in/document.in';
-import { WriteElementIn, RenameElementIn, ColorElementIn } from './models/in/element.in';
+import { WriteElementIn, RenameElementIn, ColorElementIn, CheckElementCRCIn } from './models/in/element.in';
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Document } from 'src/models/document/document.entity';
@@ -12,7 +12,7 @@ import { DocumentRepository } from 'src/models/document/document.repository';
 import { UserGuard } from 'src/guards/user.guard';
 import { UseGuards } from '@nestjs/common';
 import { SocketService } from 'src/services/socket.service';
-import { CloseElementOut, ElementStore, OpenElementOut, SendElementOut, WriteElementOut } from './models/out/element.out';
+import { CheckElementCRCOut, CloseElementOut, ElementStore, OpenElementOut, SendElementOut, WriteElementOut } from './models/out/element.out';
 import { CursorDocumentOut } from './models/out/document.out';
 import { AddTagElementIn, RemoveTagElementIn } from './models/in/tag.in';
 import { AddTagElementOut } from './models/out/tag.model';
@@ -62,6 +62,12 @@ export class DocsGateway {
     client.join("doc-" + doc.id);
     delete doc.content;
     client.broadcast.to("project-" + projectId).emit(Flags.OPEN_DOC, new OpenElementOut(userId, doc));
+  }
+
+  @SubscribeMessage(Flags.CRC_DOC)
+  public checkCRC(@ConnectedSocket() client: Socket, @MessageBody() { elId, crc }: CheckElementCRCIn) {
+    const isValid = this._socketService.docCache.checkCRC(elId, crc);
+    client.emit(Flags.CRC_DOC, new CheckElementCRCOut(elId, crc, isValid));
   }
 
   /**
