@@ -1,6 +1,6 @@
 {
   "name": "doscienario-api",
-  "version": "2.0.48",
+  "version": "2.1.1",
   "description": "Api for the use of the Doscenario app (Storyboard software for game development)",
   "author": "Théodore Prévot",
   "private": true,
