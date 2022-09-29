@@ -26,9 +26,9 @@ RUN apk add --no-cache \
 #On copie tous les fichiers depuis là ou on build vers /build dans l'image
 COPY . .
 #On install toutes les dépendances
-RUN npm install
+RUN yarn
 #On build
-RUN npm run build
+RUN yarn run build
 
 #Ensuite on part d'une autre image (différente)
 FROM node:16-alpine
