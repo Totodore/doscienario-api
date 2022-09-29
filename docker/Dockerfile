@@ -45,7 +45,7 @@ RUN apk update && \
 
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/v3.3/main" >> /etc/apk/repositories
 
-RUN apk add --no-cache libwebp=0.4.4-r0 libwebp-tools=0.4.4-r0
+RUN apk add --no-cache libwebp libwebp-tools
 
 RUN mkdir /data
 RUN mkdir /data/files
