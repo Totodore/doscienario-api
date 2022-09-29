@@ -25,7 +25,10 @@ export class CacheUtil {
     return [elementEl.elementId, elementEl.content];
   }
   public checkCRC(id: number, crc: number): boolean {
-    return crc == crc32(Buffer.from(this.elements.find(el => el.elementId == id).content));
+    const element = this.elements.find(el => el.elementId == id);
+    if (!element)
+      return false;
+    return crc == crc32(Buffer.from(element.content));
   }
   public async unregisterElement(id: number, all = false) {
     if (!all) {
