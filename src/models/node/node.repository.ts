@@ -1,3 +1,4 @@
+import { Blueprint } from './../blueprint/blueprint.entity';
 
 import { AppRepository } from "../app.repository";
 import { Node } from "./node.entity";
@@ -7,12 +8,12 @@ import { removeNodeFromTree } from '@src/utils/tree-helpers.util';
 
 @CustomRepository(Node)
 export class NodeRepository extends AppRepository<Node> {
-  
+
   @LoadCustomRepository()
   private readonly _relRepo: RelationshipRepository;
 
   public getByBlueprintId(blueprintId: number): Promise<Node[]> {
-    return this.find({ where: { blueprintId } });
+    return this.find({ where: { blueprint: { id: blueprintId } } });
   }
 
   public async placeNode(id: number, [x, y]: [number, number]) {
