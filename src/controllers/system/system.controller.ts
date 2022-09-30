@@ -25,8 +25,7 @@ export class SystemController {
     this.logger.log("Getting Tauri update for target", target, "and version", version);
     if (versions.indexOf(version) !== versions.length - 1) {
       try {
-        const release = await this.github.getRelease(target, versions[versions.length - 1]) as TauriRelease;
-        release.signature = process.env.RELEASE_PUB_KEY;
+        const release = await this.github.getRelease(target, versions[versions.length - 1]);
         this.logger.log("Got Tauri update:", JSON.stringify(release));
         return release;
       } catch (e) {
@@ -48,8 +47,4 @@ export class SystemController {
     await this.github.openIssue(message, user.name, logs);
     this.logger.log("Saving logs for bug report with user", user.id);
   }
-}
-
-interface TauriRelease extends Release {
-  signature: string;
 }

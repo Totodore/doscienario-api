@@ -1,19 +1,21 @@
+import { HttpService } from "@nestjs/axios";
 import { BadRequestException, Injectable, OnModuleInit } from "@nestjs/common";
-import { Octokit,  } from "@octokit/core";
+import { Octokit } from "@octokit/core";
 import { AppLogger } from "src/utils/app-logger.util";
 
 @Injectable()
 export class GithubService implements OnModuleInit {
-  
+
   private readonly octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
   constructor(
     private readonly logger: AppLogger,
+    private readonly http: HttpService,
   ) { }
-  
+
   public async onModuleInit() {
     this.logger.log("Verifying github connection...");
     try {
-      await this.octokit.auth();   
+      await this.octokit.auth();
     } catch (e) {
       this.logger.error("Failed to connect to github");
       throw e;
@@ -26,7 +28,7 @@ export class GithubService implements OnModuleInit {
         owner: 'totodore',
         repo: 'doscienario',
         title: `Automatic client issue from user: ${user} ${content.split(" ").slice(0, 5).join(" ")}...`,
-        body: content + "\n\n# Client Logs \n```" + clientLog + "\n```\n\n# Server Logs\n```" + await this.logger.getServerLogs() + "\n```",	
+        body: content + "\n\n# Client Logs \n```" + clientLog + "\n```\n\n# Server Logs\n```" + await this.logger.getServerLogs() + "\n```",
       });
       await this.octokit.request('POST /repos/{owner}/{repo}/issues/{issue_number}/assignees', {
         owner: 'totodore',
@@ -53,19 +55,27 @@ export class GithubService implements OnModuleInit {
       repo: 'doscienario',
     });
     const release = releases.data.find(r => r.tag_name === `v${version}`);
-    if (!release) {
+    if (!release)
       throw new BadRequestException("Release not found");
-    }
+
     const assets = release.assets.find(a => platform == "windows" ? a.name.endsWith(".zip") : a.name.endsWith(".tar.gz"));
-    if (!assets) {
+    if (!assets)
       throw new BadRequestException("Asset not found");
-    }
+
+    const sigId = release.assets.find(a => platform == "windows" ? a.name.endsWith(".zip.sig") : a.name.endsWith(".tar.gz.sig"))?.id;
+    const signature = (await this.octokit.request('GET /repos/{owner}/{repo}/releases/assets/{asset_id}', {
+      owner: 'totodore',
+      repo: 'doscienario',
+      asset_id: sigId,
+      headers: { accept: "application/octet-stream" }
+    })).data as unknown as ArrayBuffer;
     return {
       name: release.name,
       notes: release.body_text || release.body,
       platform,
       url: assets.browser_download_url,
-      version: release.tag_name
+      version: release.tag_name.substring(1),
+      signature: Buffer.from(signature).toString("base64")
     };
   }
 }
@@ -77,4 +87,5 @@ export type Release = {
   name: string;
   notes: string;
   pub_date?: string;
+  signature: string;
 }
