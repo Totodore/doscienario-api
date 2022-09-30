@@ -27,11 +27,13 @@ export class SystemController {
       try {
         const release = await this.github.getRelease(target, versions[versions.length - 1]) as TauriRelease;
         release.signature = process.env.RELEASE_PUB_KEY;
-        this.logger.log("Got Tauri update! version: ", release.version);
+        this.logger.log("Got Tauri update:", JSON.stringify(release));
         return release;
       } catch (e) {
-        this.logger.error("Failed to get release:", e);
-        throw new HttpException("No more versions available", 204);
+        if (!(e instanceof HttpException)) {
+          this.logger.error("Failed to get release:", e);
+          throw new HttpException("No more versions available", 204);
+        }
       }
     } else
       throw new HttpException("No more versions available", 204);

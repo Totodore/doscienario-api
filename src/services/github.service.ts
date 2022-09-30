@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from "@nestjs/common";
+import { BadRequestException, Injectable, OnModuleInit } from "@nestjs/common";
 import { Octokit,  } from "@octokit/core";
 import { AppLogger } from "src/utils/app-logger.util";
 
@@ -54,20 +54,18 @@ export class GithubService implements OnModuleInit {
     });
     const release = releases.data.find(r => r.tag_name === `v${version}`);
     if (!release) {
-      throw new Error("Release not found");
+      throw new BadRequestException("Release not found");
     }
-    console.log(version, release);
-    const assets = release.assets.find(a => platform == "windows" ? a.name.endsWith(".msi") : a.name.endsWith(".deb"));
+    const assets = release.assets.find(a => platform == "windows" ? a.name.endsWith(".zip") : a.name.endsWith(".tar.gz"));
     if (!assets) {
-      throw new Error("Asset not found");
+      throw new BadRequestException("Asset not found");
     }
     return {
-      name: assets.name,
+      name: release.name,
       notes: release.body_text || release.body,
       platform,
       url: assets.browser_download_url,
-      version,
-      pub_date: release.published_at,
+      version: release.tag_name
     };
   }
 }
@@ -78,5 +76,5 @@ export type Release = {
   platform: "windows" | "linux";
   name: string;
   notes: string;
-  pub_date: string;
+  pub_date?: string;
 }
