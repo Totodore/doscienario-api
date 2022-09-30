@@ -1,4 +1,3 @@
-import { HttpService } from "@nestjs/axios";
 import { BadRequestException, Injectable, OnModuleInit } from "@nestjs/common";
 import { Octokit } from "@octokit/core";
 import { AppLogger } from "src/utils/app-logger.util";
