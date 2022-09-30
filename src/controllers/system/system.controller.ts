@@ -33,7 +33,8 @@ export class SystemController {
         if (!(e instanceof HttpException)) {
           this.logger.error("Failed to get release:", e);
           throw new HttpException("No more versions available", 204);
-        }
+        } else
+          this.logger.warn("Impossible to get Tauri update", e.message);
       }
     } else
       throw new HttpException("No more versions available", 204);
