@@ -9,7 +9,6 @@ export class GithubService implements OnModuleInit {
   private readonly octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
   constructor(
     private readonly logger: AppLogger,
-    private readonly http: HttpService,
   ) { }
 
   public async onModuleInit() {
