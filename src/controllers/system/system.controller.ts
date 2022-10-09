@@ -6,7 +6,7 @@ import { GetUser } from 'src/decorators/user.decorator';
 import { User } from 'src/models/user/user.entity';
 import { GithubService, Release } from 'src/services/github.service';
 
-const versions = ["2.0.42", "2.0.45", "2.0.46", "2.0.47", "2.1.0", "2.2.0"];
+const versions = ["2.0.42", "2.0.45", "2.0.46", "2.0.47", "2.1.0"];
 @Controller('system')
 export class SystemController {
 
