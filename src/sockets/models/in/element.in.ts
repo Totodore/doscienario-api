@@ -24,3 +24,10 @@ export class RenameElementIn {
     public title: string
   ) { }
 }
+
+export class CheckElementCRCIn {
+  constructor(
+    public elId: number,
+    public crc: number,
+  ) { }
+}

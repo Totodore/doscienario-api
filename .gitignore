@@ -39,3 +39,15 @@ data/**
 test.txt
 
 package-lock.json
+
+*.key
+*.key.pub
+
+
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions

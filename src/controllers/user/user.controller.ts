@@ -31,7 +31,7 @@ export class UserController {
   @Post("/register")
   async register(@Body() body: UserAuthDto): Promise<string> {
     const hash = this._jwt.encodePassword(body.password);
-    if (await User.exists({ where: { name: body.name.toLowerCase() } }))
+    if (await User.count({ where: { name: body.name.toLowerCase() } }))
       throw new BadRequestException();
     const user = await User.create({ name: body.name.toLowerCase(), password: hash }).save();
     const jwt = this._jwt.encode(user.id);
@@ -41,7 +41,7 @@ export class UserController {
   @Patch("/password")
   @UseGuards(UserGuard)
   async updatePass(@Body() body: UserPassDto, @GetUser() user: User): Promise<User> {
-    const password = (await User.findOne(user.id, { select: ["password"] })).password;
+    const password = (await User.findOne({ where: { id: user.id }, select: ["password"] })).password;
     if (!user || !this._jwt.verifyPassword(password, body.password))
       throw new ForbiddenException();
 
@@ -52,7 +52,7 @@ export class UserController {
   @Patch("/name")
   @UseGuards(UserGuard)
   async updateName(@Body() body: UserNameDto, @GetUser() user: User): Promise<User> {
-    if (await User.exists({ where: { name: body.name.toLowerCase() } }))
+    if (await User.count({ where: { name: body.name.toLowerCase() } }))
       throw new BadRequestException();
     user.name = body.name.toLowerCase();
     return await user.save();

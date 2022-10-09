@@ -1,42 +1,36 @@
 import { CursorDocumentIn } from './models/in/document.in';
-import { WriteElementIn, RenameElementIn, ColorElementIn } from './models/in/element.in';
-import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayInit, WsException } from '@nestjs/websockets';
+import { WriteElementIn, RenameElementIn, ColorElementIn, CheckElementCRCIn } from './models/in/element.in';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Document } from 'src/models/document/document.entity';
 import { User } from 'src/models/user/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';
-import { removeRoom } from 'src/utils/socket.util';
 import { Flags } from './flags.enum';
-import { getCustomRepository } from 'typeorm';
 import { GetProject } from 'src/decorators/project.decorator';
 import { GetUserId } from 'src/decorators/user.decorator';
 import { DocumentRepository } from 'src/models/document/document.repository';
 import { UserGuard } from 'src/guards/user.guard';
 import { UseGuards } from '@nestjs/common';
 import { SocketService } from 'src/services/socket.service';
-import { CloseElementOut, ElementStore, OpenElementOut, SendElementOut, WriteElementOut } from './models/out/element.out';
+import { CheckElementCRCOut, CloseElementOut, ElementStore, OpenElementOut, SendElementOut, WriteElementOut } from './models/out/element.out';
 import { CursorDocumentOut } from './models/out/document.out';
 import { AddTagElementIn, RemoveTagElementIn } from './models/in/tag.in';
 import { AddTagElementOut } from './models/out/tag.model';
+import { InjectRepository } from '@nestjs/typeorm';
 
-@WebSocketGateway({ path: "/dash" })
+@WebSocketGateway({ path: "/dash", cors: true })
 @UseGuards(UserGuard)
-export class DocsGateway implements OnGatewayInit {
+export class DocsGateway {
 
   @WebSocketServer() server: Server;
 
-  private _documentRepo: DocumentRepository;
 
   constructor(
     private readonly _logger: AppLogger,
     private readonly _socketService: SocketService,
+    @InjectRepository(DocumentRepository)
+    private readonly _documentRepo: DocumentRepository,
   ) { }
-
-  public afterInit(_server: Server) {
-    this._documentRepo = getCustomRepository(DocumentRepository);
-  }
-
-
 
   /**
    * Triggered when someone open a doc, everyone in the projec is triggered
@@ -70,6 +64,12 @@ export class DocsGateway implements OnGatewayInit {
     client.broadcast.to("project-" + projectId).emit(Flags.OPEN_DOC, new OpenElementOut(userId, doc));
   }
 
+  @SubscribeMessage(Flags.CRC_DOC)
+  public checkCRC(@ConnectedSocket() client: Socket, @MessageBody() { elId, crc }: CheckElementCRCIn) {
+    const isValid = this._socketService.docCache.checkCRC(elId, crc);
+    client.emit(Flags.CRC_DOC, new CheckElementCRCOut(elId, crc, isValid));
+  }
+
   /**
    * Triggered when someone close a doc, everyone in the project is triggered
    * Remove the user from the doc room
@@ -99,8 +99,7 @@ export class DocsGateway implements OnGatewayInit {
 
     const [updateId, changes] = this._socketService.docCache.updateElement(body);
     const userUpdates = this._socketService.docCache.getLastUpdateElement(body.elementId);
-    for (const clientId of Object.keys(this.server.sockets.adapter.rooms["doc-" + body.elementId]?.sockets || {})) {
-      const client = this.server.sockets.connected[clientId];
+    for (const client of this.server.of(`doc-${body.elementId}`).sockets.values()) {
       client.emit(Flags.WRITE_DOC, new WriteElementOut(
         body.elementId,
         userId,
@@ -132,7 +131,7 @@ export class DocsGateway implements OnGatewayInit {
     this._logger.log("Client remove doc", docId);
     await this._documentRepo.removeById(docId);
     client.broadcast.to("project-" + projectId).emit(Flags.REMOVE_DOC, docId);
-    removeRoom(this.server, "doc-" + docId);
+    this.server.socketsLeave("doc-" + docId);
     this._socketService.docCache.unregisterElement(docId);
   }
 

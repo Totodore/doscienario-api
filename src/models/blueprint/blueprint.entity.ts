@@ -1,6 +1,6 @@
 import { DataType } from '../data-type.entity';
 import { Relationship } from '../relationship/relationship.entity';
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany } from "typeorm";
+import { Entity, JoinColumn, JoinTable, ManyToMany, OneToMany } from "typeorm";
 import { Node } from "../node/node.entity";
 import { Tag } from "../tag/tag.entity";
 import { ElementEntity, IElementEntity } from '../element/element.entity';
@@ -15,12 +15,6 @@ export class Blueprint extends ElementEntity implements IElementEntity {
   @OneToMany(() => Relationship, rel => rel.blueprint, { cascade: true })
   @JoinColumn()
   relationships: Relationship[];
-
-  @Column({ nullable: true })
-  x: number;
-
-  @Column({ nullable: true })
-  y: number;
 
   @ManyToMany(() => Tag, tag => tag.blueprints, { cascade: ["insert", "recover", "update"] })
   @JoinTable({

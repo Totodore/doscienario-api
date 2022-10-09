@@ -1,25 +1,27 @@
-import { RelationshipRepository } from './../relationship/relationship.repository';
-import { InjectRepository } from "@nestjs/typeorm";
-import { removeNodeFromTree } from "src/utils/tree-helpers.util";
-import { AppRepository } from "../app.repository";
-import { Blueprint } from "../blueprint/blueprint.entity";
-import { Node } from "./node.entity";
-import { EntityRepository } from 'typeorm';
+import { Blueprint } from './../blueprint/blueprint.entity';
 
-@EntityRepository(Node)
+import { AppRepository } from "../app.repository";
+import { Node } from "./node.entity";
+import { CustomRepository, LoadCustomRepository } from '@src/config/database/typeorm-ex.decorators';
+import { RelationshipRepository } from '../relationship/relationship.repository';
+import { removeNodeFromTree } from '@src/utils/tree-helpers.util';
+
+@CustomRepository(Node)
 export class NodeRepository extends AppRepository<Node> {
 
-  constructor(
-    @InjectRepository(RelationshipRepository)
-    private readonly _relRepo: RelationshipRepository,
-  ) { super() }
+  @LoadCustomRepository()
+  private readonly _relRepo: RelationshipRepository;
 
   public getByBlueprintId(blueprintId: number): Promise<Node[]> {
-    return this.find({ where: { blueprint: new Blueprint(blueprintId) } });
+    return this.find({ where: { blueprint: { id: blueprintId } } });
   }
 
   public async placeNode(id: number, [x, y]: [number, number]) {
     await this.update({ id }, { x, y });
+  }
+
+  public updateColor(id: number, color: string) {
+    return this.update({ id }, { color });
   }
 
   public async removeById(nodeId: number) {
@@ -28,11 +30,11 @@ export class NodeRepository extends AppRepository<Node> {
     let relations = await this._relRepo.getByBlueprintId(node.blueprintId);
     const treeData = removeNodeFromTree(
       nodeId,
-      nodes.filter(el => !el.isRoot).map(el => el.id),
-      relations.map(el => [el.parentId, el.childId, el.id])
+      nodes.filter(el => !el.isRoot),
+      relations
     );
-    await this._relRepo.delete(treeData.rels);
-    await this.delete(treeData.nodes);
+    await this._relRepo.delete(treeData.rels.map(el => el.id));
+    await this.delete(treeData.nodes.map(el => el.id));
     return node;
   }
 

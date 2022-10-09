@@ -1,12 +1,11 @@
-#On part de la version 14.15 alpine de linux 
-FROM node:14.15-alpine as build
+FROM node:16-alpine as build
 #On se met dans la dir /build
 WORKDIR /build
 
 #Add packages to build Canvas, Webp and MozJPEG
 #On ajoute pleins de packets nécessaires au build de l'application
 RUN apk add --no-cache \
-    python \
+    python3 \
     g++ \
     build-base \
     cairo-dev \
@@ -27,12 +26,12 @@ RUN apk add --no-cache \
 #On copie tous les fichiers depuis là ou on build vers /build dans l'image
 COPY . .
 #On install toutes les dépendances
-RUN npm install
+RUN yarn
 #On build
-RUN npm run build
+RUN yarn run build
 
 #Ensuite on part d'une autre image (différente)
-FROM node:14.15-alpine
+FROM node:16-alpine
 #On se met dans la dir app
 WORKDIR /app
 #On copie tout le contenu de /build vers /app
@@ -46,7 +45,7 @@ RUN apk update && \
 
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/v3.3/main" >> /etc/apk/repositories
 
-RUN apk add --no-cache libwebp=0.4.4-r0 libwebp-tools=0.4.4-r0
+RUN apk add --no-cache libwebp libwebp-tools
 
 RUN mkdir /data
 RUN mkdir /data/files

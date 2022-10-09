@@ -1,3 +1,5 @@
+import { Pole } from "src/models/relationship/relationship.entity";
+
 export class CreateNodeIn {
   constructor(
     public parentNode: number,
@@ -7,6 +9,8 @@ export class CreateNodeIn {
     public ox: number,
     public oy: number,
     public relYOffset: number,
+    public parentPole: Pole,
+    public childPole: Pole,
     public locked?: boolean
   ) { }
 }
@@ -35,5 +39,18 @@ export class RemoveNodeIn {
   constructor(
     public nodeId: number,
     public blueprintId: number
+  ) {}
+}
+export class RemoveRelIn {
+  constructor(
+    public relId: number,
+    public blueprintId: number
+  ) { }
+}
+export class ColorNodeIn {
+  constructor(
+    public blueprintId: number,
+    public elementId: number,
+    public color: string,
   ) {}
 }

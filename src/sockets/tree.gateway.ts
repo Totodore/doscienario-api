@@ -3,13 +3,11 @@ import { RelationshipRepository } from './../models/relationship/relationship.re
 import { NodeRepository } from './../models/node/node.repository';
 import { Relationship } from '../models/relationship/relationship.entity';
 import { Blueprint } from '../models/blueprint/blueprint.entity';
-import { ConnectedSocket, MessageBody, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { User } from 'src/models/user/user.entity';
 import { AppLogger } from 'src/utils/app-logger.util';
-import { removeRoom } from 'src/utils/socket.util';
 import { Flags } from './flags.enum';
-import { getCustomRepository } from 'typeorm';
 import { GetProject } from 'src/decorators/project.decorator';
 import { GetUserId } from 'src/decorators/user.decorator';
 import { BlueprintRepository } from 'src/models/blueprint/blueprint.repository';
@@ -17,30 +15,27 @@ import { UserGuard } from 'src/guards/user.guard';
 import { UseGuards } from '@nestjs/common';
 import { CloseElementOut, OpenElementOut, SendElementOut } from './models/out/element.out';
 import { ColorElementIn, RenameElementIn } from './models/in/element.in';
-import { CreateNodeIn, EditSumarryIn, PlaceNodeIn, RemoveNodeIn } from './models/in/blueprint.in';
+import { CreateNodeIn, EditSumarryIn, PlaceNodeIn, RemoveNodeIn, ColorNodeIn, RemoveRelIn } from './models/in/blueprint.in';
 import { AddTagElementOut } from './models/out/tag.model';
 import { AddTagElementIn, RemoveTagElementIn } from './models/in/tag.in';
+import { InjectRepository } from '@nestjs/typeorm';
 
-@WebSocketGateway({ path: "/dash" })
+@WebSocketGateway({ path: "/dash", cors: true })
 @UseGuards(UserGuard)
-export class TreeGateway implements OnGatewayInit {
+export class TreeGateway {
 
   @WebSocketServer() server: Server;
   
-  public _blueprintRepo: BlueprintRepository;
-  public _nodeRepo: NodeRepository;
-  public _relRepo: RelationshipRepository;
-
   constructor(
     private readonly _logger: AppLogger,
-  ) { }
+    @InjectRepository(NodeRepository)
+    private readonly _nodeRepo: NodeRepository,
+    @InjectRepository(RelationshipRepository)
+    private readonly _relRepo: RelationshipRepository,
+    @InjectRepository(BlueprintRepository)
+    private readonly _blueprintRepo: BlueprintRepository,
+  ) {  }
   
-  public afterInit(_server: Server) {
-    this._blueprintRepo = getCustomRepository(BlueprintRepository);
-    this._nodeRepo = getCustomRepository(NodeRepository);
-    this._relRepo = getCustomRepository(RelationshipRepository);
-  }
-
   @SubscribeMessage(Flags.OPEN_BLUEPRINT)
   public async openBlueprint(@ConnectedSocket() client: Socket, @MessageBody() [reqId, docId]: [string, number?], @GetProject() projectId: number, @GetUserId() userId: string) {
     let blueprint: Blueprint;
@@ -75,7 +70,7 @@ export class TreeGateway implements OnGatewayInit {
     this._logger.log("Client remove blueprint", docId);
     await this._blueprintRepo.removeById(docId);
     client.broadcast.to("project-" + projectId.toString()).emit(Flags.REMOVE_BLUEPRINT, docId);
-    removeRoom(this.server, "blueprint-" + docId);
+    this.server.socketsLeave("blueprint-" + docId);
   }
 
   @SubscribeMessage(Flags.RENAME_BLUEPRINT)
@@ -93,6 +88,13 @@ export class TreeGateway implements OnGatewayInit {
     client.broadcast.to("project-" + projectId).emit(Flags.COLOR_BLUEPRINT, body);
   }
 
+  @SubscribeMessage(Flags.COLOR_NODE)
+  public async colorNode(@ConnectedSocket() client: Socket, @MessageBody() body: ColorNodeIn, @GetProject() projectId: string) {
+    this._logger.log("Client color node", body.elementId);
+    await this._nodeRepo.updateColor(body.elementId, body.color);
+    client.broadcast.to("blueprint-" + body.blueprintId).emit(Flags.COLOR_NODE, body);
+  }
+
   @SubscribeMessage(Flags.CREATE_NODE)
   public async createNode(@ConnectedSocket() client: Socket, @MessageBody() packet: CreateNodeIn, @GetUserId() userId: string) {
     this._logger.log("Create node for", packet.blueprint);
@@ -108,10 +110,8 @@ export class TreeGateway implements OnGatewayInit {
       parentId: packet.parentNode,
       childId: node.id,
       blueprint: new Blueprint(packet.blueprint),
-      ox: packet.ox,
-      oy: packet.oy + packet.relYOffset,
-      ex: packet.x,
-      ey: packet.y + packet.relYOffset
+      parentPole: packet.parentPole,
+      childPole: packet.childPole,
     });
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_NODE, new CreateNodeOut(node, userId));
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_RELATION, new CreateRelationOut(packet.blueprint, rel));
@@ -135,6 +135,16 @@ export class TreeGateway implements OnGatewayInit {
     this._logger.log("Remove node for", packet.nodeId);
     await this._nodeRepo.removeById(packet.nodeId);
     client.broadcast.to("blueprint-" + packet.blueprintId).emit(Flags.REMOVE_NODE, packet);
+  }
+
+  /**
+   * Remove relationship should only be used when needing to remove only one relation without any other node
+   */
+  @SubscribeMessage(Flags.REMOVE_RELATION)
+  public async removeRelation(@ConnectedSocket() client: Socket, @MessageBody() packet: RemoveRelIn) {
+    this._logger.log("Remove rel for", packet.relId);
+    await this._relRepo.removeById(packet.relId);
+    client.broadcast.to("blueprint-" + packet.blueprintId).emit(Flags.REMOVE_RELATION, packet);
   }
 
   @SubscribeMessage(Flags.CREATE_RELATION)
