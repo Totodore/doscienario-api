@@ -19,7 +19,7 @@ export abstract class ElementRepository<T extends IElementEntity> extends AppRep
 
   public async addTag(id: number, title: string, projectId: number, userId: string) {
     let el = await this.findOne({ where: { id } as FindOptionsWhere<T>, relations: ["tags"] });
-    let tag = (await Tag.findOneBy({ title, projectId })) ?? await Tag.create({
+    let tag = (await Tag.findOneBy({ title, project: { id: projectId } })) ?? await Tag.create({
       title,
       project: new Project(projectId),
       createdBy: new User(userId)

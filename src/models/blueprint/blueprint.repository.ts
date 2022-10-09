@@ -18,8 +18,8 @@ export class BlueprintRepository extends ElementRepository<Blueprint> {
   }
 
   public async removeById(id: number) {
-    await Node.delete({ blueprintId: id });
-    await Relationship.delete({ blueprintId: id });
+    await Node.delete({ blueprint: { id } });
+    await Relationship.delete({ blueprint: { id } });
     return await (await Blueprint.findOneBy({ id })).remove();
   }
 }
