@@ -188,14 +188,14 @@ export class ProjectController {
      * Create sheets and map ids + docs
      */
     this._logger.log("4 - Import sheets into Database");
-    await createQueryBuilder().insert().into(Sheet).values(sheets.map(sheet => Sheet.create({
+    await Sheet.insert(sheets.map(sheet => Sheet.create({
       ...sheet,
       id: null,
       documentId: documentMap.get(sheet.documentId)?.id,
       createdBy: user,
       lastEditor: user,
       project: new Project(projectId),
-    }))).execute();
+    })));
 
     /** 
      * Create Blueprints and map the new ids 
@@ -231,13 +231,13 @@ export class ProjectController {
      * Create relationships with the mapped blueprint ids 
      */
     this._logger.log("7 - Import blueprint relationships into Database")
-    await createQueryBuilder(Relationship).insert().values(relationships.map(rel => Relationship.create({
+    await Relationship.insert(relationships.map(rel => Relationship.create({
       ...rel,
       id: null,
       blueprint: blueprintMap.get(rel.blueprintId),
       childId: nodeMap.get(rel.childId),
       parentId: nodeMap.get(rel.parentId)
-    }))).execute();
+    })));
 
     /** 
      * Importing the images buffer 
