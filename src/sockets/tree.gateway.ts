@@ -15,7 +15,7 @@ import { UserGuard } from 'src/guards/user.guard';
 import { UseGuards } from '@nestjs/common';
 import { CloseElementOut, OpenElementOut, SendElementOut } from './models/out/element.out';
 import { ColorElementIn, RenameElementIn } from './models/in/element.in';
-import { CreateNodeIn, EditSumarryIn, PlaceNodeIn, RemoveNodeIn, ColorNodeIn, RemoveRelIn } from './models/in/blueprint.in';
+import { CreateNodeIn, EditSumarryIn, PlaceNodeIn, RemoveNodeIn, ColorNodeIn, RemoveRelIn, InsertNodeIn } from './models/in/blueprint.in';
 import { AddTagElementOut } from './models/out/tag.model';
 import { AddTagElementIn, RemoveTagElementIn } from './models/in/tag.in';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -98,6 +98,7 @@ export class TreeGateway {
   @SubscribeMessage(Flags.CREATE_NODE)
   public async createNode(@ConnectedSocket() client: Socket, @MessageBody() packet: CreateNodeIn, @GetUserId() userId: string) {
     this._logger.log("Create node for", packet.blueprint);
+    // Creating node
     const node = await this._nodeRepo.post({
       blueprint: new Blueprint(packet.blueprint),
       x: packet.x,
@@ -106,14 +107,21 @@ export class TreeGateway {
       lastEditor: new User(userId),
       locked: packet.locked
     });
-    const rel = await this._relRepo.post({
-      parentId: packet.parentNode,
-      childId: node.id,
-      blueprint: new Blueprint(packet.blueprint),
-      parentPole: packet.parentPole,
-      childPole: packet.childPole,
-    });
+    const [rel, patchedRel] = await Promise.all([
+      // Creating relation between parent and new node
+      this._relRepo.post({
+        parentId: packet.parentNode,
+        childId: node.id,
+        blueprint: new Blueprint(packet.blueprint),
+        parentPole: packet.parentPole,
+        childPole: packet.childPole,
+      }),
+      // Updating child rel to link with the new node and not the parent
+      packet.childRel ? this._relRepo.updateParentNode(packet.childRel, node.id) : null
+    ]);
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_NODE, new CreateNodeOut(node, userId));
+    if (patchedRel)
+      this.server.to("blueprint-" + packet.blueprint).emit(Flags.PATCH_RELATIONSHIP, patchedRel);
     this.server.to("blueprint-" + packet.blueprint).emit(Flags.CREATE_RELATION, new CreateRelationOut(packet.blueprint, rel));
   }
 
