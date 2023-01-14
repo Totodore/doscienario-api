@@ -24,18 +24,32 @@ export class NodeRepository extends AppRepository<Node> {
     return this.update({ id }, { color });
   }
 
-  public async removeById(nodeId: number) {
+  public async recursiveRemoveById(nodeId: number) {
     const node = await this.getOne(nodeId);
-    let nodes = await this.getByBlueprintId(node.blueprintId);
-    let relations = await this._relRepo.getByBlueprintId(node.blueprintId);
+    const [nodes, relations] = await Promise.all([
+      this.getByBlueprintId(node.blueprintId),
+      this._relRepo.getByBlueprintId(node.blueprintId)
+    ]);
     const treeData = removeNodeFromTree(
       nodeId,
       nodes.filter(el => !el.isRoot),
       relations
     );
-    await this._relRepo.delete(treeData.rels.map(el => el.id));
-    await this.delete(treeData.nodes.map(el => el.id));
+    await Promise.all([
+      this._relRepo.delete(treeData.rels.map(el => el.id)),
+      this.delete(treeData.nodes.map(el => el.id))
+    ]);
     return node;
+  }
+
+  public async removeById(id: number) {
+    const parentRel = await this._relRepo.getFromChildNode(id);
+    await Promise.all([
+      this._relRepo.delete({ childId: id }),
+      this._relRepo.update({ parentId: id }, { parentId: parentRel.parentId }),
+      this.delete(id),
+    ]);
+    return null;
   }
 
   public async updateSummaryById(id: number, summary: string) {

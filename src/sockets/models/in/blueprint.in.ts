@@ -1,56 +1,52 @@
 import { Pole } from "src/models/relationship/relationship.entity";
 
-export class CreateNodeIn {
-  constructor(
-    public parentNode: number,
-    public blueprint: number,
-    public x: number,
-    public y: number,
-    public ox: number,
-    public oy: number,
-    public relYOffset: number,
-    public parentPole: Pole,
-    public childPole: Pole,
-    public locked?: boolean
-  ) { }
+export interface CreateNodeIn {
+  parentNode: number,
+  childRel?: number,
+  blueprint: number,
+  x: number,
+  y: number,
+  ox: number,
+  oy: number,
+  relYOffset: number,
+  parentPole: Pole,
+  childPole: Pole,
+  locked?: boolean,
 }
-export class RemoveRelationIn {
-  constructor(
-    public blueprint: number,
-    public parentNode: number,
-    public childNode: number
-  ) {}
+
+export interface InsertNodeIn {
+  blueprint: number;
+  parentNode: number;
+  childNode: number;
+  parentPole: Pole;
+  childPole: Pole;
 }
-export class EditSumarryIn {
-  constructor(
-    public node: number,
-    public content: string,
-    public blueprint: number
-  ) {}
+export interface RemoveRelationIn {
+  blueprint: number,
+  parentNode: number,
+  childNode: number
 }
-export class PlaceNodeIn {
-  constructor(
-    public blueprintId: number,
-    public id: number,
-    public pos: [number, number]
-  ) {}
+export interface EditSumarryIn {
+  node: number,
+  content: string,
+  blueprint: number
 }
-export class RemoveNodeIn {
-  constructor(
-    public nodeId: number,
-    public blueprintId: number
-  ) {}
+export interface PlaceNodeIn {
+  blueprintId: number,
+  id: number,
+  pos: [number, number]
 }
-export class RemoveRelIn {
-  constructor(
-    public relId: number,
-    public blueprintId: number
-  ) { }
+export interface RemoveNodeIn {
+  nodeId: number,
+  blueprintId: number,
+  recursive?: boolean
 }
-export class ColorNodeIn {
-  constructor(
-    public blueprintId: number,
-    public elementId: number,
-    public color: string,
-  ) {}
+export interface RemoveRelIn {
+  relId: number,
+  blueprintId: number
+}
+export interface ColorNodeIn {
+  blueprintId: number,
+  elementId: number,
+  color: string,
 }
