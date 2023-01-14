@@ -141,7 +141,11 @@ export class TreeGateway {
   @SubscribeMessage(Flags.REMOVE_NODE)
   public async removeNode(@ConnectedSocket() client: Socket, @MessageBody() packet: RemoveNodeIn, @GetUserId() userId: string) {
     this._logger.log("Remove node for", packet.nodeId);
-    await this._nodeRepo.removeById(packet.nodeId);
+    if (packet.recursive)
+      await this._nodeRepo.recursiveRemoveById(packet.nodeId);
+    else {
+      await this._nodeRepo.removeById(packet.nodeId);
+    }
     client.broadcast.to("blueprint-" + packet.blueprintId).emit(Flags.REMOVE_NODE, packet);
   }
 

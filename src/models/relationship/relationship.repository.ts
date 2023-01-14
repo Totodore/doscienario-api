@@ -9,6 +9,13 @@ export class RelationshipRepository extends AppRepository<Relationship> {
     return this.find({ where: { blueprint: { id: blueprintId } } });
   }
 
+  public async getFromParentNode(id: number): Promise<Relationship> {
+    return this.findOneBy({ parentId: id });
+  }
+  public async getFromChildNode(id: number): Promise<Relationship> {
+    return this.findOneBy({ childId: id });
+  }
+
   public async updateParentNode(id: number, parentId: number): Promise<Relationship> {
     const [rel, _] = await Promise.all([
       this.findOneBy({ id }),

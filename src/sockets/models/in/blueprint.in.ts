@@ -38,7 +38,8 @@ export interface PlaceNodeIn {
 }
 export interface RemoveNodeIn {
   nodeId: number,
-  blueprintId: number
+  blueprintId: number,
+  recursive?: boolean
 }
 export interface RemoveRelIn {
   relId: number,
