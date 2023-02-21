@@ -50,7 +50,7 @@ export abstract class ElementEntity extends AppEntity {
 }
 export class ContentElementEntity extends ElementEntity {
 
-  @Column("text", { select: false, nullable: true })
+  @Column("longtext", { select: false, nullable: true })
   content: string;
 }
 export interface IElementEntity extends ElementEntity {
