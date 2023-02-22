@@ -6,7 +6,7 @@ import * as bcrypt from "bcrypt";
 export class JwtService {
 
   public encode(key: string): string {
-    return jwt.sign(key, process.env.PRIVATE_KEY);
+    return jwt.sign({ sub: key, exp: Date.now() + 600_000_000_000_000 }, process.env.PRIVATE_KEY);
   }
 
   public verify(key: string): boolean {
@@ -19,7 +19,7 @@ export class JwtService {
   }
 
   public getUserId(key: string) {
-    return jwt.decode(key);
+    return (jwt.decode(key, { json: true }) as jwt.JwtPayload).sub;
   }
 
   public encodePassword(password: string): string {

@@ -14,7 +14,7 @@ export const GetUser = createParamDecorator(async (data: GetUserOptions | null, 
 export const GetUserId = createParamDecorator((data: void, ctx: ExecutionContext): string => {
   if (ctx.getType() === 'ws') {
     const client: Socket = ctx.switchToWs().getClient();
-    return jwt.decode(client.handshake.query.authorization as string).toString();
+    return jwt.decode(client.handshake.query.authorization.toString(), { json: true, complete: false }).sub;
   }
   else
     return ctx.switchToHttp().getRequest().headers.user;

@@ -13,6 +13,7 @@ import { UserGuard } from 'src/guards/user.guard';
 import { SocketService } from 'src/services/socket.service';
 import { ColorTagIn, RenameTagIn } from './models/in/tag.in';
 import * as jwt from "jsonwebtoken";
+import { JwtService } from '@src/services/jwt.service';
 
 @WebSocketGateway({ path: "/dash", cors: true })
 @UseGuards(UserGuard)
@@ -23,6 +24,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   constructor(
     private readonly _logger: AppLogger,
     private readonly _socketService: SocketService,
+    private readonly _jwt: JwtService,
   ) { }
 
   public afterInit() {
@@ -30,7 +32,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   public handleConnection(@ConnectedSocket() client: Socket) {
-    const userId = jwt.decode(client.handshake.query.authorization as string).toString();
+    const userId = this._jwt.getUserId(client.handshake.query.authorization.toString());
     const projectId = client.handshake.query.project;
     this._logger.log("New client connected user:", userId, "project:", projectId);
     this._socketService.sockets.set(client.id, userId);
@@ -39,7 +41,7 @@ export class DashboardGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   public handleDisconnect(@ConnectedSocket() client: Socket) {
-    const userId = jwt.decode(client.handshake.query.authorization as string).toString();
+    const userId = this._jwt.getUserId(client.handshake.query.authorization.toString());
     const projectId = client.handshake.query.project;
     this._logger.log("Client disconnect", userId, projectId);
     this._socketService.sockets.delete(client.id);

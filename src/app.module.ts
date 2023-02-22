@@ -86,12 +86,4 @@ import { ConfigurableModuleClass } from '@nestjs/common/cache/cache.module-defin
     GithubService,
   ],
 })
-export class AppModule extends ConfigurableModuleClass { 
-
-  static register(config: any) {
-    console.log(config);
-    return {
-      ...super.register(config),
-    }
-  }
-}
+export class AppModule { }
