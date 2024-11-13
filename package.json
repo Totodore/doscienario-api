@@ -33,11 +33,11 @@
     "crc": "^4.1.1",
     "jsonwebtoken": "^9.0.0",
     "module-alias": "^2.2.2",
-    "mysql2": "^2.3.3",
+    "mysql2": "^3.9.8",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.5.6",
-    "sharp": "^0.30.7",
+    "sharp": "^0.32.6",
     "swagger-ui-express": "^4.5.0",
     "typeorm": "^0.3.8",
     "uuid": "^8.3.2"
